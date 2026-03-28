@@ -78,10 +78,10 @@ var defaultSettings = map[string]interface{}{
 		map[string]interface{}{"id": "bank", "name": "銀行"},
 		map[string]interface{}{"id": "epay", "name": "電子支付"},
 	},
-	"accounts":   []interface{}{},
-	"merchants":  []interface{}{},
-	"experts":    []interface{}{},
-	"note_tags":  []interface{}{},
+	"accounts":  []interface{}{},
+	"merchants": []interface{}{},
+	"experts":   []interface{}{},
+	"note_tags": []interface{}{},
 }
 
 // ── Redis helpers ─────────────────────────────────────────────────────────
@@ -187,8 +187,6 @@ func jsonResp(w http.ResponseWriter, code int, data interface{}) {
 func Handler(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Path
 
-	// ── API 路由 ──
-	switch {
 	// ── API 路由 ──
 	switch {
 	// 1. 新增：處理首頁請求 (訪問網址不帶路徑時)
@@ -958,14 +956,14 @@ func handleResetRecords(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
-    // 讀取 index.html。
-    // 注意：如果你的 index.html 在 templates 資料夾，路徑就要寫 "templates/index.html"
-    // 如果你在根目錄，就寫 "index.html"
-    f, err := os.ReadFile("templates/index.html") 
-    if err != nil {
-        http.Error(w, "找不到首頁檔案 index.html", 500)
-        return
-    }
-    w.Header().Set("Content-Type", "text/html; charset=utf-8")
-    w.Write(f)
+	// 讀取 index.html。
+	// 注意：如果你的 index.html 在 templates 資料夾，路徑就要寫 "templates/index.html"
+	// 如果你在根目錄，就寫 "index.html"
+	f, err := os.ReadFile("templates/index.html")
+	if err != nil {
+		http.Error(w, "找不到首頁檔案 index.html", 500)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write(f)
 }
