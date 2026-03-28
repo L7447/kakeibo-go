@@ -189,6 +189,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	// ── API 路由 ──
 	switch {
+	// ── API 路由 ──
+	switch {
+	// 1. 新增：處理首頁請求 (訪問網址不帶路徑時)
+	case p == "/" || p == "":
+		handleIndex(w, r)
+
+	// ... 原本的那些 case p == "/api/records" ...
 	// Records
 	case p == "/api/records" && r.Method == http.MethodGet:
 		handleGetRecords(w, r)
@@ -948,4 +955,17 @@ func handleResetRecords(w http.ResponseWriter, r *http.Request) {
 	}
 	saveJSON(settingsKey, s)
 	jsonResp(w, 200, map[string]bool{"ok": true})
+}
+
+func handleIndex(w http.ResponseWriter, r *http.Request) {
+    // 讀取 index.html。
+    // 注意：如果你的 index.html 在 templates 資料夾，路徑就要寫 "templates/index.html"
+    // 如果你在根目錄，就寫 "index.html"
+    f, err := os.ReadFile("templates/index.html") 
+    if err != nil {
+        http.Error(w, "找不到首頁檔案 index.html", 500)
+        return
+    }
+    w.Header().Set("Content-Type", "text/html; charset=utf-8")
+    w.Write(f)
 }
