@@ -364,7 +364,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
   text-align:right;
   flex:1;
   line-height:1.1;
-  margin-left:-520px;   /* ← 淨資產金額向左移動 50px */
+  margin-left:20px;   /* ← 淨資產金額向左移動 50px */
 }
 .acc-break-container{display:flex;justify-content:center;gap:32px;font-size:15px;font-weight:600}
 .acc-break-container span{color:var(--orange)}
