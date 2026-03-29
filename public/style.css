@@ -350,13 +350,12 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .note-tag:hover{background:rgba(22,163,74,.08);border-color:rgba(22,163,74,.4)}
 #detail-box hr{margin:12px 0}
 
-
 /* ══ Toast ══════════════════════════════════════ */
-#toast{position:fixed;bottom:calc(var(--nav)+12px);left:50%;
-  transform:translateX(-50%) translateY(12px);background:var(--sf2);color:var(--t1);
+#toast{position:fixed;top:50%;bottom:auto;left:50%;
+  transform:translate(-50%, -50%) translateY(12px);background:var(--sf2);color:var(--t1);
   padding:9px 18px;border-radius:20px;font-size:13px;border:1px solid var(--border);
-  opacity:0;transition:.25s;z-index:99999;white-space:pre-wrap;max-width:80vw;text-align:center;pointer-events:none}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  opacity:0;transition:.25s;z-index:99999;white-space:pre-wrap;max-width:80vw;text-align:center;pointer-events:none} /* top:改為距離頂部 50% */
+#toast.show{opacity:1;transform:translate(-50%, -50%) translateY(0)} /* 顯示時的動畫終點 */
 
 /* ══ 帳戶總覽頁（容器設計 + 金額左移 50px） ════════════════════════════════ */
 .acc-summary{padding:12px;margin-bottom:8px}
