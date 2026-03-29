@@ -48,6 +48,9 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .nav-plus:active{transform:scale(.9)}
 
 /* ══ Overlay（全螢幕滑入）════════════════════ */
+.bar-btn.confirm {width: 46px !important;height: 46px !important;font-size: 22px !important;line-height: 46px;} /* 加大確認按鈕 */
+@keyframes rippleAnim {to {transform: scale(4);opacity: 0;}} /* 水波紋動畫 */
+
 .overlay-page{position:fixed;inset:0;max-width:430px;margin:0 auto;background:var(--bg);
   z-index:200;display:flex;flex-direction:column;transform:translateY(100%);
   transition:transform .3s cubic-bezier(.4,0,.2,1);overflow:hidden;
