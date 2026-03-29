@@ -121,25 +121,24 @@ function toast(msg, duration){
   const el=document.createElement('div');
   el.className='_toast_el';
   el.textContent=msg;
-  // 用 setAttribute style 確保 iOS 能正確套用
   el.setAttribute('style',
-    'position:fixed !important;'
-    +'bottom:80px !important;'
-    +'left:50% !important;'
-    +'transform:translateX(-50%) !important;'
-    +'background:#1e293b !important;'
-    +'color:#fff !important;'
-    +'padding:12px 22px !important;'
-    +'border-radius:28px !important;'
-    +'font-size:14px !important;'
-    +'font-weight:500 !important;'
-    +'z-index:2147483647 !important;'
-    +'max-width:85vw !important;'
-    +'text-align:center !important;'
-    +'box-shadow:0 6px 24px rgba(0,0,0,0.4) !important;'
-    +'pointer-events:none !important;'
+    'position:fixed !important;' +
+    'top:50% !important;' +
+    'left:50% !important;' +
+    'transform:translate(-50%, -50%) !important;' +
+    'background:#1e293b !important;' +
+    'color:#fff !important;' +
+    'padding:12px 22px !important;' +
+    'border-radius:28px !important;' +
+    'font-size:14px !important;' +
+    'font-weight:500 !important;' +
+    'z-index:2147483647 !important;' +
+    'max-width:85vw !important;' +
+    'text-align:center !important;' +
+    'box-shadow:0 6px 24px rgba(0,0,0,0.4) !important;' +
+    'pointer-events:none !important;'
   );
-  document.documentElement.appendChild(el); // 掛在 <html> 不是 <body>
+  document.documentElement.appendChild(el);
   setTimeout(()=>{ el.remove(); }, duration||2500);
 }
 
@@ -3276,5 +3275,42 @@ document.addEventListener('click', async function(e) {
     await openDetail(recItem.dataset.id);
   }
 });
+
+// 新增記錄頁右上 ✓ 按鈕水波紋特效
+function addRippleEffect() {
+  const confirmBtn = document.getElementById('add-confirm');
+  if (!confirmBtn) return;
+
+  confirmBtn.style.position = 'relative';
+  confirmBtn.style.overflow = 'hidden';
+
+  confirmBtn.addEventListener('click', function(e) {
+    const rect = this.getBoundingClientRect();
+    const ripple = document.createElement('span');
+    const size = Math.max(rect.width, rect.height) * 2.2;
+
+    ripple.style.position = 'absolute';
+    ripple.style.borderRadius = '50%';
+    ripple.style.background = 'rgba(255,255,255,0.75)';   // 白色水波（適合綠色背景）
+    ripple.style.width = ripple.style.height = `${size}px`;
+    ripple.style.left = `${e.clientX - rect.left - size/2}px`;
+    ripple.style.top = `${e.clientY - rect.top - size/2}px`;
+    ripple.style.transform = 'scale(0)';
+    ripple.style.animation = 'rippleAnim 0.6s linear forwards';
+    ripple.style.pointerEvents = 'none';
+
+    this.appendChild(ripple);
+
+    // 自動移除
+    setTimeout(() => ripple.remove(), 600);
+  });
+}
+
+// 確保頁面載入後立即綁定
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', addRippleEffect);
+} else {
+  addRippleEffect();
+}
 
 init();
