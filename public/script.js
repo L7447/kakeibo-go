@@ -1600,6 +1600,7 @@ document.getElementById('add-cancel').addEventListener('click',()=>{
 document.getElementById('add-confirm').addEventListener('click', function(){
   // === 新增：立即顯示「紀錄新增中」訊息框（1.5秒）===
   toast('紀錄新增中', 1500);
+});  
   try{
     let total=0;
     // ── 存錢筒模式 ──
