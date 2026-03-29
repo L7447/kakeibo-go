@@ -1593,7 +1593,13 @@ document.getElementById('add-cancel').addEventListener('click',()=>{
   document.getElementById('cat-section').style.display='none';
   closeOverlay('add-page');
 });
-document.getElementById('add-confirm').addEventListener('click',async()=>{
+// ══════════════════════════════════════════════
+// 新增記錄確認按鈕（右上角 ✓）
+// 已加入「紀錄新增中」1.5秒特效
+// ══════════════════════════════════════════════
+document.getElementById('add-confirm').addEventListener('click', function(){
+  // === 新增：立即顯示「紀錄新增中」訊息框（1.5秒）===
+  toast('紀錄新增中', 1500);
   try{
     let total=0;
     // ── 存錢筒模式 ──
