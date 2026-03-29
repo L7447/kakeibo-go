@@ -351,17 +351,25 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
   opacity:0;transition:.25s;z-index:99999;white-space:pre-wrap;max-width:80vw;text-align:center;pointer-events:none}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ══ 帳戶總覽頁（新增容器樣式） ════════════════════════════════ */
+/* ══ 帳戶總覽頁（容器設計 + 金額左移 50px） ════════════════════════════════ */
 .acc-summary{padding:12px;margin-bottom:8px}
 .acc-net-container{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:16px}
 .acc-net-left{flex-shrink:0;min-width:88px}
 .acc-net-left .title{font-size:18px;font-weight:700;color:var(--t1)}
 .acc-net-left .currency{font-size:18px;color:var(--t2);margin-top:2px}
-.acc-net-amount{font-family:var(--mono);font-size:44px;font-weight:800;text-align:right;flex:1;line-height:1.1}
+.acc-net-amount{
+  font-family:var(--mono);
+  font-size:44px;
+  font-weight:800;
+  text-align:right;
+  flex:1;
+  line-height:1.1;
+  margin-left:-50px;   /* ← 淨資產金額向左移動 50px */
+}
 .acc-break-container{display:flex;justify-content:center;gap:32px;font-size:15px;font-weight:600}
 .acc-break-container span{color:var(--orange)}
 
-.acc-summary-amount{text-align:center!important;} /* 已移除強制綠色，讓 JS 動態控制顏色 */
+
 .acc-icon,.rec-cat-icon{border:none!important;}
 
 /* === 累積修改 CSS === */
