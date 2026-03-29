@@ -366,28 +366,27 @@ function findDebtCat(id){
   return flatDebtCats(DEBT_CATS).find(c=>c.id===id)||{id,name:id,color:'#8B909A'};
 }
 
-/* ── 負債列表（已調整為同層顯示） ── */
+/* ── 負債列表（已移除總額欄，將新增按鈕移至頂部） ── */
 function renderDebtSection(){
-  const el=document.getElementById('acc-debt-section');
-  const items=advLoad('debt');
-  const total=items.reduce((s,d)=>s+(parseFloat(d.amount)||0),0);
+  const el = document.getElementById('acc-debt-section');
+  const items = advLoad('debt');
+  const total = items.reduce((s,d)=>s+(parseFloat(d.amount)||0),0);
   
-  // === 修改重點：負債總額與金額同層，格式「負債總額：NT$ xxx」置中 ===
-  let html=`<div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:16px;">
-    <span style="font-size:15px;font-weight:600;color:var(--t1);">負債總額：</span>
-    <span style="font-family:var(--mono);font-size:24px;font-weight:800;color:var(--red);">NT$ ${fmt(total)}</span>
-  </div>`;
+  let html = '';
+
+  // 原「負債總額欄」位置 → 現在放「＋新增負債」按鈕
+  html += '<button onclick="openDebtForm()" style="width:100%;padding:14px;margin-bottom:20px;background:var(--sf2);border:1px dashed var(--border);border-radius:var(--rs);color:var(--t2);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:.15s;">＋ 新增負債</button>';
 
   if(!items.length){
-    html+='<div class="empty-tip" style="padding:24px 0">尚無負債記錄<br>點 ＋ 新增</div>';
+    html += '<div class="empty-tip" style="padding:32px 0;text-align:center">尚無負債記錄</div>';
   } else {
-    html+=items.map((d,i)=>{
-      const cat=findDebtCat(d.category);
-      const paid=parseFloat(d.paid||0);
-      const amt=parseFloat(d.amount||0);
-      const pct=amt>0?Math.min(100,Math.round(paid/amt*100)):0;
-      const remain=Math.max(0,amt-paid);
-      const barColor=pct>=100?'var(--acc)':pct>=70?'#FFD166':'var(--red)';
+    html += items.map((d,i)=>{
+      const cat = findDebtCat(d.category);
+      const paid = parseFloat(d.paid||0);
+      const amt = parseFloat(d.amount||0);
+      const pct = amt>0?Math.min(100,Math.round(paid/amt*100)):0;
+      const remain = Math.max(0,amt-paid);
+      const barColor = pct>=100?'var(--acc)':pct>=70?'#FFD166':'var(--red)';
       return '<div class="debt-card">'
         +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
         +'<div style="display:flex;align-items:center;gap:8px;">'
@@ -414,8 +413,8 @@ function renderDebtSection(){
         +'</div>';
     }).join('');
   }
-  html+='<button onclick="openDebtForm()" style="width:100%;padding:12px;margin-top:8px;background:var(--sf2);border:1px dashed var(--border);border-radius:var(--rs);color:var(--t2);font-size:13px;cursor:pointer;font-family:var(--sans);">＋ 新增負債</button>';
-  el.innerHTML=html;
+  
+  el.innerHTML = html;
 }
 
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -3276,7 +3275,7 @@ document.addEventListener('click', async function(e) {
   }
 });
 
-// 新增記錄頁右上 ✓ 按鈕水波紋特效
+// 新增記錄頁右上 ✓ 按鈕：先變深 → 水波紋特效
 function addRippleEffect() {
   const confirmBtn = document.getElementById('add-confirm');
   if (!confirmBtn) return;
@@ -3285,13 +3284,17 @@ function addRippleEffect() {
   confirmBtn.style.overflow = 'hidden';
 
   confirmBtn.addEventListener('click', function(e) {
+    // 步驟1：立即變深
+    this.classList.add('pressed');
+
+    // 步驟2：建立水波紋
     const rect = this.getBoundingClientRect();
     const ripple = document.createElement('span');
     const size = Math.max(rect.width, rect.height) * 2.2;
 
     ripple.style.position = 'absolute';
     ripple.style.borderRadius = '50%';
-    ripple.style.background = 'rgba(255,255,255,0.75)';   // 白色水波（適合綠色背景）
+    ripple.style.background = 'rgba(255,255,255,0.85)';
     ripple.style.width = ripple.style.height = `${size}px`;
     ripple.style.left = `${e.clientX - rect.left - size/2}px`;
     ripple.style.top = `${e.clientY - rect.top - size/2}px`;
@@ -3301,8 +3304,11 @@ function addRippleEffect() {
 
     this.appendChild(ripple);
 
-    // 自動移除
-    setTimeout(() => ripple.remove(), 600);
+    // 動畫結束後恢復原始顏色
+    setTimeout(() => {
+      this.classList.remove('pressed');
+      ripple.remove();
+    }, 600);
   });
 }
 
