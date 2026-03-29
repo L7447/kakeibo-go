@@ -30,7 +30,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
   padding:6px 12px;border-radius:var(--rs);transition:.15s;
   -webkit-tap-highlight-color:transparent;min-width:48px}
 .ni .ic{font-size:20px;transition:transform .15s}
-.ni .lb{font-size:10px;color:var(--t3);letter-spacing:.4px;transition:color .15s}
+.ni .lb{font-size:13px;color:var(--t3);letter-spacing:.4px;transition:color .15s}
 .nav-icon{width:22px;height:22px;object-fit:contain;}
 
 /* === 新增：點選後圖示顏色變化 === */
@@ -39,7 +39,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
   transition: filter .2s ease;
 }
 
-.ni.active .lb{color:var(--acc);font-weight:700}
+.ni.active .lb{color::#1E40AF;font-weight:700}
 .ni.active .ic{transform:scale(1.1)}
 .nav-plus{width:48px;height:48px;border-radius:50%;background:var(--acc);
   display:flex;align-items:center;justify-content:center;font-size:24px;color:#0a1a10;
