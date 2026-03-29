@@ -232,7 +232,7 @@ const closeOverlay = id=>{
 };
 
 /* ══════════════════════════════════════════════
-   帳戶總覽
+   帳戶總覽（已調整為上下雙容器設計 + 金額左移）
 ══════════════════════════════════════════════ */
 let ACC_GROUPS=[];
 
@@ -240,7 +240,6 @@ function renderAccounts(){
   const container=document.getElementById('acc-groups');
   const summary=document.getElementById('acc-summary');
   const accs=S.cfg.accounts||[];
-  // overall total
   const posTotal = accs.reduce((s,a)=>s+Math.max(0,parseFloat(a.balance)||0),0);
   const negTotal = accs.reduce((s,a)=>s+Math.max(0,-(parseFloat(a.balance)||0)),0);
   const debtItems = advLoad('debt');
@@ -248,21 +247,17 @@ function renderAccounts(){
   const displayDebt = Math.max(negTotal, debtTotal);
   const globalTotal = posTotal - displayDebt;
 
-  // 淨資產顏色與顯示（正綠、負紅、無負號）
   const netColor = globalTotal >= 0 ? '#22C55E' : 'var(--red)';
   const netDisplay = globalTotal >= 0 ? fmt(globalTotal) : fmt(Math.abs(globalTotal));
 
-  // === 新容器設計 ===
   summary.innerHTML = `
     <div class="acc-net-container">
-      <!-- 上層容器：左窄（淨資產 + TWD）｜右寬（金額） -->
       <div class="acc-net-left">
         <div class="title">淨資產</div>
         <div class="currency">TWD</div>
       </div>
       <div class="acc-net-amount" style="color:${netColor}">${netDisplay}</div>
     </div>
-    <!-- 下層容器：置中顯示總資產與總負債（標題橘色，金額維持原色） -->
     <div class="acc-break-container">
       <span>總資產 <span style="color:var(--blue);font-family:var(--mono);font-weight:700;">${fmt(posTotal)}</span></span>
       <span>總負債 <span style="color:var(--red);font-family:var(--mono);font-weight:700;">${fmt(displayDebt)}</span></span>
