@@ -2172,7 +2172,6 @@ document.getElementById('ntag-name').addEventListener('keydown',e=>{
 });
 
 // category overlay initialization and handlers
-<!-- 【修改原因】原只有 8 色，依照需求新增 10 組新顏色 -->
 // 【需求 1】18 色調色盤
 function initCatPalette(){
   // 24 色，grid 12列×2行
