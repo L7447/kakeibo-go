@@ -243,27 +243,29 @@ function renderAccounts(){
   // overall total
   const posTotal = accs.reduce((s,a)=>s+Math.max(0,parseFloat(a.balance)||0),0);
   const negTotal = accs.reduce((s,a)=>s+Math.max(0,-(parseFloat(a.balance)||0)),0);
-  // 負債列表總額（localStorage）
   const debtItems = advLoad('debt');
   const debtTotal = debtItems.reduce((s,d)=>s+(parseFloat(d.amount)||0),0);
   const displayDebt = Math.max(negTotal, debtTotal);
   const globalTotal = posTotal - displayDebt;
 
-  // === 修改重點 ===
+  // 淨資產顏色與顯示（正綠、負紅、無負號）
   const netColor = globalTotal >= 0 ? '#22C55E' : 'var(--red)';
-  const netDisplay = globalTotal >= 0 ? fmt(globalTotal) : fmt(Math.abs(globalTotal)); // 移除負號
+  const netDisplay = globalTotal >= 0 ? fmt(globalTotal) : fmt(Math.abs(globalTotal));
 
+  // === 新容器設計 ===
   summary.innerHTML = `
-    <div class="acc-summary-header">
-      <div class="acc-summary-left">
-        <div class="acc-summary-title" style="font-size:18px;">淨資產</div>
-        <div class="acc-summary-currency">TWD</div>
+    <div class="acc-net-container">
+      <!-- 上層容器：左窄（淨資產 + TWD）｜右寬（金額） -->
+      <div class="acc-net-left">
+        <div class="title">淨資產</div>
+        <div class="currency">TWD</div>
       </div>
-      <div class="acc-summary-amount" style="color:${netColor}">${netDisplay}</div>
+      <div class="acc-net-amount" style="color:${netColor}">${netDisplay}</div>
     </div>
-    <div class="acc-summary-break">
-      <span style="font-size:15px;color:var(--blue);">總資產 ${fmt(posTotal)}</span>
-      <span style="font-size:15px;color:var(--red);">總負債 ${fmt(displayDebt)}</span>
+    <!-- 下層容器：置中顯示總資產與總負債（標題橘色，金額維持原色） -->
+    <div class="acc-break-container">
+      <span>總資產 <span style="color:var(--blue);font-family:var(--mono);font-weight:700;">${fmt(posTotal)}</span></span>
+      <span>總負債 <span style="color:var(--red);font-family:var(--mono);font-weight:700;">${fmt(displayDebt)}</span></span>
     </div>`;
 
   container.innerHTML='';
@@ -310,7 +312,6 @@ function renderAccounts(){
     const hdr=card.querySelector('.grp-header');
     const body=card.querySelector('.grp-body');
     const arrow=card.querySelector('.grp-arrow');
-    // make each account balance clickable to filter
     body.querySelectorAll('.acc-row').forEach(row=>{
       const aid=row.dataset.aid;
       row.querySelector('.acc-bal').style.cursor='pointer';
@@ -320,7 +321,6 @@ function renderAccounts(){
         goPage('home');
       });
     });
-    // 預設展開
     body.classList.add('open'); arrow.classList.add('open');
     hdr.addEventListener('click',()=>{
       body.classList.toggle('open'); arrow.classList.toggle('open');
@@ -362,16 +362,16 @@ function findDebtCat(id){
   return flatDebtCats(DEBT_CATS).find(c=>c.id===id)||{id,name:id,color:'#8B909A'};
 }
 
-/* ── 負債列表 ── */
+/* ── 負債列表（已調整為同層顯示） ── */
 function renderDebtSection(){
   const el=document.getElementById('acc-debt-section');
   const items=advLoad('debt');
   const total=items.reduce((s,d)=>s+(parseFloat(d.amount)||0),0);
   
-  // === 修改重點：負債總額金額置中 ===
-  let html=`<div style="text-align:center;margin-bottom:12px;">
-    <span style="font-size:13px;font-weight:600;color:var(--t1);">負債總額</span>
-    <span style="font-family:var(--mono);font-size:24px;font-weight:800;color:var(--red);display:block;margin-top:6px;">NT$ ${fmt(total)}</span>
+  // === 修改重點：負債總額與金額同層，格式「負債總額：NT$ xxx」置中 ===
+  let html=`<div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:16px;">
+    <span style="font-size:15px;font-weight:600;color:var(--t1);">負債總額：</span>
+    <span style="font-family:var(--mono);font-size:24px;font-weight:800;color:var(--red);">NT$ ${fmt(total)}</span>
   </div>`;
 
   if(!items.length){
@@ -395,12 +395,10 @@ function renderDebtSection(){
         +'<button onclick="openDebtForm('+i+')" style="padding:4px 10px;border-radius:999px;background:var(--sf2);color:var(--t2);border:1px solid var(--border);font-size:12px;cursor:pointer;">✎</button>'
         +'<button onclick="deleteDebt('+i+')" class="row-del-btn" style="width:28px;height:28px;">✕</button>'
         +'</div></div>'
-        // 金額列
         +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);margin-bottom:6px;">'
         +'<span>總額 <strong style="color:var(--red);font-family:var(--mono);">NT$ '+fmt(amt)+'</strong></span>'
         +'<span>月還款 <strong style="color:var(--t1);font-family:var(--mono);">NT$ '+fmt(d.payment||0)+'</strong></span>'
         +'</div>'
-        // 進度條
         +'<div style="height:4px;background:var(--sf2);border-radius:2px;margin-bottom:6px;overflow:hidden;">'
         +'<div style="width:'+pct+'%;height:100%;background:'+barColor+';border-radius:2px;"></div></div>'
         +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);">'
