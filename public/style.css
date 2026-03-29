@@ -366,9 +366,28 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
   line-height:1.1;
   margin-left:-15px;   /* ← 淨資產金額向左移動 50px */
 }
-.acc-break-container{display:flex;justify-content:center;gap:32px;font-size:15px;font-weight:600}
-.acc-break-container span{color:var(--orange)}
 
+/* 新增：好看的標籤樣式 */
+.acc-break-container{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+.acc-break-tag{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 20px;
+  background:var(--sf);
+  border:1px solid var(--border);
+  border-radius:9999px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  font-size:15px;
+  font-weight:600;
+  color:var(--t1);
+  transition:transform .2s;
+}
+.acc-break-tag:hover{transform:scale(1.03)}
+.acc-break-tag .label{font-size:13px;color:var(--t3)}
+.acc-assets .acc-break-tag{border-color:var(--blue);background:var(--blue-d);color:var(--blue)}
+.acc-liab .acc-break-tag{border-color:var(--red);background:var(--red-d);color:var(--red)}
+.acc-break-tag .amt{font-family:var(--mono);font-size:17px;font-weight:700;margin-left:4px}
 
 .acc-icon,.rec-cat-icon{border:none!important;}
 
