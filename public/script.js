@@ -248,18 +248,22 @@ function renderAccounts(){
   const debtTotal = debtItems.reduce((s,d)=>s+(parseFloat(d.amount)||0),0);
   const displayDebt = Math.max(negTotal, debtTotal);
   const globalTotal = posTotal - displayDebt;
-  const totalColor = globalTotal>=0 ? '#22C55E' : 'var(--red)';
+
+  // === 修改重點 ===
+  const netColor = globalTotal >= 0 ? '#22C55E' : 'var(--red)';
+  const netDisplay = globalTotal >= 0 ? fmt(globalTotal) : fmt(Math.abs(globalTotal)); // 移除負號
+
   summary.innerHTML = `
     <div class="acc-summary-header">
       <div class="acc-summary-left">
-        <div class="acc-summary-title">總額</div>
+        <div class="acc-summary-title" style="font-size:18px;">淨資產</div>
         <div class="acc-summary-currency">TWD</div>
       </div>
-      <div class="acc-summary-amount" style="color:${totalColor}">${fmt(globalTotal)}</div>
+      <div class="acc-summary-amount" style="color:${netColor}">${netDisplay}</div>
     </div>
     <div class="acc-summary-break">
-      <span>總資產 ${fmt(posTotal)}</span>
-      <span class="liab" style="cursor:pointer;text-decoration:underline dotted;" onclick="switchAccTab('debt')">總負債 ${fmt(displayDebt)}</span>
+      <span style="font-size:15px;color:var(--blue);">總資產 ${fmt(posTotal)}</span>
+      <span style="font-size:15px;color:var(--red);">總負債 ${fmt(displayDebt)}</span>
     </div>`;
 
   container.innerHTML='';
@@ -363,10 +367,13 @@ function renderDebtSection(){
   const el=document.getElementById('acc-debt-section');
   const items=advLoad('debt');
   const total=items.reduce((s,d)=>s+(parseFloat(d.amount)||0),0);
-  let html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
-    +'<span style="font-size:13px;font-weight:600;color:var(--t1);">負債總額</span>'
-    +'<span style="font-family:var(--mono);font-size:20px;font-weight:800;color:var(--red);">NT$ '+fmt(total)+'</span>'
-    +'</div>';
+  
+  // === 修改重點：負債總額金額置中 ===
+  let html=`<div style="text-align:center;margin-bottom:12px;">
+    <span style="font-size:13px;font-weight:600;color:var(--t1);">負債總額</span>
+    <span style="font-family:var(--mono);font-size:24px;font-weight:800;color:var(--red);display:block;margin-top:6px;">NT$ ${fmt(total)}</span>
+  </div>`;
+
   if(!items.length){
     html+='<div class="empty-tip" style="padding:24px 0">尚無負債記錄<br>點 ＋ 新增</div>';
   } else {
