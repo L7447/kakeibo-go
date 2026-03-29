@@ -364,7 +364,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
   
   flex:1;
   line-height:1.1;
-  margin-left:-15px;   /* ← 淨資產金額向左移動 50px */
+  margin-left:-1px;   /* ← 淨資產金額向左移動 50px */
 }
 
 /* 新增：好看的標籤樣式 */
