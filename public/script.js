@@ -1595,12 +1595,13 @@ document.getElementById('add-cancel').addEventListener('click',()=>{
 });
 // ══════════════════════════════════════════════
 // 新增記錄確認按鈕（右上角 ✓）
-// 已加入「紀錄新增中」1.5秒特效
+// 已加入「紀錄新增中」1.5秒特效 + 原有儲存邏輯
 // ══════════════════════════════════════════════
-document.getElementById('add-confirm').addEventListener('click', function(){
-  // === 新增：立即顯示「紀錄新增中」訊息框（1.5秒）===
+document.getElementById('add-confirm').addEventListener('click', async function(){
+  // === 立即顯示「紀錄新增中」訊息框（1.5秒）===
   toast('紀錄新增中', 1500);
-});  
+
+  // ── 以下為您原本的完整儲存邏輯（已完整保留） ──
   try{
     let total=0;
     // ── 存錢筒模式 ──
@@ -1630,6 +1631,7 @@ document.getElementById('add-confirm').addEventListener('click', function(){
       _selPiggy=null;
       return;
     }
+
     if(S.addType==='transfer'){
       total=S.addItems.reduce((s,it)=>s+parseFloat(it.amount||0),0);
       if(!total){ toast('請輸入金額'); return; }
@@ -1643,13 +1645,14 @@ document.getElementById('add-confirm').addEventListener('click', function(){
     } else {
       total=S.addItems.reduce((s,it)=>s+(parseFloat(it.qty)||1)*(parseFloat(it.price)||0),0);
       if(!total){ toast('請輸入金額'); return; }
-      // ensure each item has category
       for(const it of S.addItems){ if(!it.category){ toast('請為每項選擇分類'); return; }}
     }
+
     let note=document.getElementById('f-note').value;
     if(S.addType==='adjust' && !note){
       note=`調整後 NT$ ${fmt(total)}`;
     }
+
     const payload={
       type:S.addType,
       items: S.addItems.map(it=>{
@@ -1666,21 +1669,22 @@ document.getElementById('add-confirm').addEventListener('click', function(){
       time:document.getElementById('f-time').value,
       note,
     };
-    // choose POST vs PUT depending on edit state
+
     if(S.editRec && S.editRec.id){
       await api(`/api/records/${S.editRec.id}`,{method:'PUT',body:JSON.stringify(payload)});
       S.editRec=null;
     } else {
       await api('/api/records',{method:'POST',body:JSON.stringify(payload)});
     }
+
     if(S.addType==='adjust'){
-      // keep account balance in sync with the adjusted value
       const accId = payload.account;
       await api(`/api/settings/accounts/${accId}`,{method:'PUT',body:JSON.stringify({balance:total})});
       await loadCfg();
     }
+
     document.getElementById('cat-section').style.display='none';
-    // 若選了存錢筒，自動存入
+
     if(_selPiggy!==null&&S.addType==='expense'){
       try{
         const piggies=advLoad('piggy');
@@ -1697,10 +1701,9 @@ document.getElementById('add-confirm').addEventListener('click', function(){
     } else {
       toast('記錄成功 ✓');
     }
+
     closeOverlay('add-page');
-    // after submitting a new record (or update), refresh the home view so the calendar
-    // and list update correctly. If the record is in a different month, move the
-    // calendar there first.
+
     const [y,m]=payload.date.split('-').map(s=>parseInt(s,10));
     S.calY=y; S.calM=m;
     S.selDate=payload.date;
@@ -1708,6 +1711,7 @@ document.getElementById('add-confirm').addEventListener('click', function(){
     await renderHome();
     goPage('home');
     if(document.getElementById('page-accounts').classList.contains('active')) renderAccounts();
+
   }catch(e){
     console.error(e);
     toast('新增失敗：'+(e.message||e));
