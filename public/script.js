@@ -258,9 +258,20 @@ function renderAccounts(){
       </div>
       <div class="acc-net-amount" style="color:${netColor}">${netDisplay}</div>
     </div>
+    <!-- 好看的標籤容器 -->
     <div class="acc-break-container">
-      <span>總資產 <span style="color:var(--blue);font-family:var(--mono);font-weight:700;">${fmt(posTotal)}</span></span>
-      <span>總負債 <span style="color:var(--red);font-family:var(--mono);font-weight:700;">${fmt(displayDebt)}</span></span>
+      <div class="acc-assets">
+        <div class="acc-break-tag">
+          <span class="label">總資產</span>
+          <span class="amt" style="color:var(--blue)">${fmt(posTotal)}</span>
+        </div>
+      </div>
+      <div class="acc-liab">
+        <div class="acc-break-tag">
+          <span class="label">總負債</span>
+          <span class="amt" style="color:var(--red)">${fmt(displayDebt)}</span>
+        </div>
+      </div>
     </div>`;
 
   container.innerHTML='';
@@ -323,7 +334,6 @@ function renderAccounts(){
     container.appendChild(card);
   });
 }
-
 /* ══════════════════════════════════════════════
    帳戶頁 資產/負債 切換
 ══════════════════════════════════════════════ */
