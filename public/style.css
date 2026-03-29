@@ -12,7 +12,6 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
 #app{width:100%;max-width:none;height:100dvh;margin:0 auto;position:relative;overflow:hidden}
-/* now no maximum, calendar can expand to entire viewport */
 
 /* ══ 頁面 ══════════════════════════════════════ */
 .page{position:absolute;inset:0;bottom:var(--nav);overflow-y:auto;overflow-x:visible;
@@ -263,6 +262,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .cat-toggle-btn.on{background:var(--acc);color:#0a1a10;border-color:var(--acc);box-shadow:0 2px 8px rgba(22,163,74,0.25)}
 .transfer-type{display:flex;gap:8px;margin:10px 0 6px;justify-content:center}
 .transfer-type .cat-chip{padding:8px 12px;border-radius:999px;transition:.2s;}
+
 /* ══ 功能頁 ════════════════════════════════════ */
 .fn-title{font-size:20px;font-weight:700;text-align:center;margin-bottom:20px}
 .set-sec{margin-bottom:20px}
@@ -290,16 +290,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
   color:var(--blue);font-size:12px;cursor:pointer;display:flex;align-items:center;
   justify-content:center;-webkit-tap-highlight-color:transparent;flex-shrink:0}
 .editbtn:hover{background:rgba(37,99,235,0.15)}
-/* 帳戶子頁：分組折疊 */
-.sub-grp{margin-bottom:8px}
-.sub-grp-hdr{display:flex;align-items:center;justify-content:space-between;
-  padding:10px 14px;background:var(--sf2);border-radius:var(--rs);cursor:pointer;
-  -webkit-tap-highlight-color:transparent;margin-bottom:4px}
-.sub-grp-hdr span{font-size:13px;font-weight:500}
-.sub-grp-hdr .sg-arrow{font-size:10px;color:var(--t3);transition:transform .2s}
-.sub-grp-hdr.open .sg-arrow{transform:rotate(180deg)}
-.sub-grp-body{display:none;background:var(--sf);border:1px solid var(--border);border-radius:var(--rs);overflow:hidden}
-.sub-grp-body.open{display:block}
 
 /* ══ 新增帳戶 mini overlay ══════════════════════ */
 #add-acc-overlay{position:fixed;inset:0;max-width:430px;margin:0 auto;
@@ -371,7 +361,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .acc-summary-break span{color:var(--t2)}
 .acc-summary-break .liab{color:var(--red)}
 
-.acc-summary-amount{color:#16A34A!important;text-align:center!important;}
+.acc-summary-amount{text-align:center!important;} /* 已移除強制綠色，讓 JS 動態控制顏色 */
 .acc-icon,.rec-cat-icon{border:none!important;}
 
 /* === 累積修改 CSS === */
