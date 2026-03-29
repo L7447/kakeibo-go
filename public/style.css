@@ -32,6 +32,13 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .ni .ic{font-size:20px;transition:transform .15s}
 .ni .lb{font-size:10px;color:var(--t3);letter-spacing:.4px;transition:color .15s}
 .nav-icon{width:22px;height:22px;object-fit:contain;}
+
+/* === 新增：點選後圖示顏色變化 === */
+.ni.active .nav-icon {
+  filter: brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(87deg) brightness(92%) contrast(92%);
+  transition: filter .2s ease;
+}
+
 .ni.active .lb{color:var(--acc);font-weight:700}
 .ni.active .ic{transform:scale(1.1)}
 .nav-plus{width:48px;height:48px;border-radius:50%;background:var(--acc);
