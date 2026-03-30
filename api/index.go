@@ -18,9 +18,13 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// ── 嵌入 icon 資料夾（Vercel 部署必備）────────────────────────────────────
+//
+//go:embed icon
+var iconFS embed.FS
+
 // ── Redis client（全域，冷啟動時初始化）────────────────────────────────────
 var (
-	iconFS    embed.FS
 	rdb       *redis.Client
 	ctx       = context.Background()
 	redisOnce bool
