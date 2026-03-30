@@ -33,6 +33,25 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .ni .lb{font-size:13px;color:var(--t3);letter-spacing:.4px;transition:color .15s}
 .nav-icon{width:22px;height:22px;object-fit:contain;}
 
+.nav-bar {
+  z-index: 100; /* 確保高於一般頁面 */
+  pointer-events: auto !important;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: var(--sf);
+  border-top: 1px solid var(--border);
+}
+/* 2. 導覽列按鈕點擊範圍優化 */
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
 /* === 新增：點選後圖示顏色變化 === */
 .ni.active .nav-icon {
   filter: brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(87deg) brightness(92%) contrast(92%);
@@ -92,24 +111,24 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .cat-lbl{font-size:11px;color:var(--t3);letter-spacing:.8px;margin-bottom:8px}
 
 /* 修改：確保類別網格不跑掉且可以點擊 */
+/* 3. 修復類別頁面格式跑掉 */
 .cat-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 強制四欄佈局 */
-  gap: 10px;
-  padding: 10px;
-  width: 100%;           /* 確保寬度填滿 */
-  pointer-events: auto;  /* 確保可以點擊 */
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important; /* 強制四欄 */
+  gap: 12px;
+  padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  pointer-events: auto !important; /* 確保分類圖示可以按 */
 }
 
-/* 確保每個類別項目的點擊範圍正確 */
+/* 4. 分類項目的點擊回饋 */
 .cat-item {
-  cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px 0;
-  border-radius: 8px;
-  -webkit-tap-highlight-color: transparent; /* 移除手機點擊藍框 */
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 .cat-item:active {
