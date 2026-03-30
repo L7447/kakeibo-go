@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,9 +17,9 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// ── 嵌入 icon 資料夾（Vercel 部署必備）────────────────────────────────────
+// ── 嵌入 public/icon 資料夾（因為 index.go 在 api/ 資料夾）──────────────────
 //
-//go:embed icon
+/* go:embed ../public/icon */
 var iconFS embed.FS
 
 // ── Redis client（全域，冷啟動時初始化）────────────────────────────────────
@@ -869,8 +868,8 @@ func handleIcons(w http.ResponseWriter, r *http.Request) {
 	var files []string
 
 	if category != "" {
-		catDir := path.Join("icon", category)
-		entries, err := iconFS.ReadDir(catDir)
+		// 因為已 embed ../public/icon，所以這裡直接用分類名稱
+		entries, err := iconFS.ReadDir(category)
 		if err == nil {
 			for _, e := range entries {
 				if !e.IsDir() {
@@ -879,7 +878,7 @@ func handleIcons(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else {
-		entries, err := iconFS.ReadDir("icon")
+		entries, err := iconFS.ReadDir(".")
 		if err == nil {
 			for _, e := range entries {
 				if !e.IsDir() {
@@ -893,7 +892,7 @@ func handleIcons(w http.ResponseWriter, r *http.Request) {
 	jsonResp(w, 200, files)
 }
 
-// 內建圖示（預設分類 + 資料夾名稱）
+// ── 內建圖示分類 ─────────────────────────────────────────────────────────
 func handleIconCategories(w http.ResponseWriter, r *http.Request) {
 	defaults := []string{"餐食、飲料", "生活支出", "交通", "收入", "帳戶", "轉帳"}
 	seen := map[string]bool{}
@@ -906,8 +905,8 @@ func handleIconCategories(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 掃描 embed 資料夾中的其他子資料夾
-	entries, err := iconFS.ReadDir("icon")
+	// 掃描 ../public/icon 下的所有子資料夾
+	entries, err := iconFS.ReadDir(".")
 	if err == nil {
 		for _, e := range entries {
 			if e.IsDir() && !seen[e.Name()] {
