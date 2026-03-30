@@ -90,7 +90,32 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 /* 分類快選（移到 items 前面）*/
 .cat-section{margin-bottom:14px}
 .cat-lbl{font-size:11px;color:var(--t3);letter-spacing:.8px;margin-bottom:8px}
-.cat-grid{display:flex;flex-wrap:wrap;gap:7px}
+
+/* 修改：確保類別網格不跑掉且可以點擊 */
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 強制四欄佈局 */
+  gap: 10px;
+  padding: 10px;
+  width: 100%;           /* 確保寬度填滿 */
+  pointer-events: auto;  /* 確保可以點擊 */
+}
+
+/* 確保每個類別項目的點擊範圍正確 */
+.cat-item {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  border-radius: 8px;
+  -webkit-tap-highlight-color: transparent; /* 移除手機點擊藍框 */
+}
+
+.cat-item:active {
+  background-color: var(--sf2); /* 點擊時有灰色反饋 */
+}
+
 .cat-chip{padding:7px 12px;border-radius:20px;border:1px solid var(--border);
   background:var(--sf2);color:var(--t2);font-size:12px;cursor:pointer;transition:.15s;
   -webkit-tap-highlight-color:transparent;white-space:nowrap}
