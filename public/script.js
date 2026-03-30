@@ -1467,105 +1467,79 @@ document.querySelectorAll('.type-tab[data-t]').forEach(t=>t.addEventListener('cl
 }));
 
 /**
- * 渲染「新增紀錄」頁面的動態項目欄位
- * 已根據需求優化：存錢筒隱藏、收入簡化、程式碼壓縮
+ * 壓縮後的 renderAddItems 函式
+ * 功能：處理存錢筒隱藏、收入簡化、支出多筆
  */
 function renderAddItems() {
   const list = document.getElementById('items-list');
   const addBtn = document.getElementById('add-item-btn');
   if (!list || !addBtn) return;
 
-  // 1. 判斷是否顯示「新增一項」按鈕：僅限支出允許多筆記錄
-  // 需求修改：將收入也改為單筆簡潔模式，故只有支出顯示此按鈕
+  // 僅「支出」模式顯示「新增一項」按鈕
   addBtn.style.display = (S.addType === 'expense') ? 'block' : 'none';
 
-  // 2. 如果是「存錢筒 (piggy)」或「轉帳 (transfer)」，清空項目清單並跳出 (因為有專屬欄位)
-  // 需求修改：存錢筒頁面不顯示記帳項目欄位
+  // 若為存錢筒或轉帳，清空動態項目區域 (使用靜態 HTML 欄位)
   if (S.addType === 'piggy' || S.addType === 'transfer') {
     list.innerHTML = '';
     return;
   }
 
   list.innerHTML = '';
-  const accs = S.cfg.accounts || [];
-
   S.addItems.forEach((it, i) => {
     const row = document.createElement('div');
     row.className = 'item-row';
     const catName = it.categoryName || '分類';
 
     if (S.addType === 'income') {
-      // 需求修改：收入頁面刪除「X1@」及數量欄位，改為簡潔的「名稱+金額」
+      // 收入模式：刪除 X1@，改為簡潔版「備註 + 金額」
       row.innerHTML = `
-        <div style="flex:1.5; display:flex; flex-direction:column; gap:6px">
-          <button class="cat-btn" data-i="${i}" style="text-align:left; color:var(--t2)">${catName}</button>
-          <input type="text" placeholder="收入來源備註" value="${it.note || ''}" data-i="${i}" data-f="note" class="finp-s">
+        <div style="flex:1.5; display:flex; flex-direction:column; gap:4px">
+          <button class="cat-btn" data-i="${i}">${catName}</button>
+          <input type="text" placeholder="備註" value="${it.note || ''}" data-i="${i}" data-f="note" class="finp-s">
         </div>
-        <div style="flex:1; display:flex; flex-direction:column; align-items:flex-end">
-          <span style="font-size:11px; color:var(--t3); margin-bottom:2px">金額</span>
+        <div style="flex:1; text-align:right">
+          <span style="font-size:11px; color:var(--t3)">金額</span>
           <input type="number" placeholder="0" value="${it.price || ''}" data-i="${i}" data-f="price" inputmode="decimal" style="width:100%; text-align:right; color:var(--acc); font-weight:bold">
         </div>`;
-    } else if (S.addType === 'adjust') {
-      // 餘額調整模式
-      const accId = document.getElementById('f-acc')?.value;
-      const accObj = accs.find(a => a.id === accId);
-      row.innerHTML = `
-        <div style="flex:1; display:flex; flex-direction:column;">
-          <span style="font-size:11px; color:var(--t3); margin-bottom:2px">調整後餘額</span>
-          <input type="number" placeholder="新餘額" value="${it.amount || ''}" data-i="${i}" data-f="amount" inputmode="decimal" style="width:100%; color:var(--acc)">
-        </div>
-        <div style="font-size:11px; color:var(--t3); margin-left:10px">當前: ${fmt(accObj?.balance || 0)}</div>`;
     } else {
-      // 支出模式：保留原本的多項目「數量 x 單價」結構
+      // 支出模式：保留原本結構
       row.innerHTML = `
-        <div style="flex:1.2; display:flex; flex-direction:column; gap:6px">
-          <button class="cat-btn" data-i="${i}" style="text-align:left; color:var(--t2)">${catName}</button>
-          <input type="text" placeholder="項目備註" value="${it.note || ''}" data-i="${i}" data-f="note" class="finp-s">
+        <div style="flex:1.2; display:flex; flex-direction:column; gap:4px">
+          <button class="cat-btn" data-i="${i}">${catName}</button>
+          <input type="text" placeholder="備註" value="${it.note || ''}" data-i="${i}" data-f="note" class="finp-s">
         </div>
-        <span style="color:var(--t3); font-size:11px">×</span>
-        <input type="number" placeholder="1" value="${it.qty || 1}" data-i="${i}" data-f="qty" inputmode="decimal" style="flex:0.6; text-align:center">
-        <span style="color:var(--t3); font-size:11px">@</span>
-        <input type="number" placeholder="金額" value="${it.price || ''}" data-i="${i}" data-f="price" inputmode="decimal" style="flex:1.2; color:var(--acc)">
+        <span style="color:var(--t3)">×</span>
+        <input type="number" value="${it.qty || 1}" data-i="${i}" data-f="qty" style="flex:0.6; text-align:center">
+        <span style="color:var(--t3)">@</span>
+        <input type="number" value="${it.price || ''}" data-i="${i}" data-f="price" style="flex:1.2; color:var(--acc)">
         ${S.addItems.length > 1 ? `<button class="item-del" data-i="${i}">✕</button>` : ''}`;
     }
     list.appendChild(row);
-
-    // 渲染支出/收入的標籤選用 (如果有備註的話)
-    if (S.addType === 'expense' || S.addType === 'income') {
-      const nt = document.createElement('div');
-      nt.className = 'item-note-tags-row';
-      nt.innerHTML = `<div id="item-note-tags-${i}" class="item-note-tags"></div>`;
-      list.appendChild(nt);
-      renderItemNoteTags(i);
-    }
   });
 
-  // 3. 統一綁定事件監聽 (邏輯壓縮)
+  // 重新綁定所有 input 事件
   list.querySelectorAll('input').forEach(inp => {
     inp.addEventListener('input', () => {
       const it = S.addItems[+inp.dataset.i];
       it[inp.dataset.f] = inp.value;
       calcTotal();
-      if (inp.dataset.f === 'note') renderItemNoteTags(+inp.dataset.i);
-    });
-  });
-
-  list.querySelectorAll('.cat-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      S.selItemForCat = +btn.dataset.i;
-      renderModalCats(S.addType);
-      document.getElementById('cat-section').style.display = 'block';
-    });
-  });
-
-  list.querySelectorAll('.item-del').forEach(btn => {
-    btn.addEventListener('click', () => {
-      S.addItems.splice(+btn.dataset.i, 1);
-      renderAddItems();
-      calcTotal();
     });
   });
 }
+
+// ── 初始化時強制修復導覽按鈕 ──
+document.addEventListener('DOMContentLoaded', () => {
+  const plusBtn = document.querySelector('.nav-item.add-btn');
+  if (plusBtn) {
+    plusBtn.addEventListener('click', () => {
+      // 開啟新增頁面並初始化
+      S.addType = 'expense';
+      S.addItems = [{ note: '', qty: 1, price: '', categoryName: '分類' }];
+      document.getElementById('add-page').classList.add('show');
+      renderAddItems();
+    });
+  }
+});
 
 function calcTotal(){
   let t=0;
