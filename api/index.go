@@ -863,34 +863,76 @@ func handleDelNoteTag(w http.ResponseWriter, r *http.Request, tid string) {
 }
 
 // ── Icons ─────────────────────────────────────────────────────────────────
+// 【重要修正】：因為 embed.FS 在 Vercel 上對中文資料夾不穩定，改用硬編碼方式
+// 這樣最穩定，且未來新增圖片只需在下面的 map 增加檔名即可
+var iconFiles = map[string][]string{
+	"餐食、飲料": {
+		"餐食、飲料/早餐.png",
+		"餐食、飲料/午餐.png",
+		"餐食、飲料/晚餐.png",
+		"餐食、飲料/消夜.png",
+		"餐食、飲料/飲料.png",
+		"餐食、飲料/麵包.png",
+		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/餐食、飲料/ 完全一樣）
+	},
+	"生活支出": {
+		"生活支出/健保費.png",
+		"生活支出/剪髮.png",
+		"生活支出/手機通話費.png",
+		"生活支出/網路費.png",
+		// ← 新增您的圖片
+	},
+	"交通": {
+		"交通/保養.png",
+		"交通/加油費.png",
+		"交通/維修.png",
+		// ← 請把您 GitHub public/icon/交通/ 裡的所有檔名全部複製到這裡
+	},
+	"收入": {
+		"收入/薪水.png",
+		"收入/獎金.png",
+		"收入/投資理財.png",
+		// ← 新增您的圖片
+	},
+	"帳戶": {
+		"帳戶/icash pay.png",
+		"帳戶/聯邦銀行.png",
+		"帳戶/錢包.png",
+		"帳戶/街口支付.png",
+		"帳戶/永豐銀行.png",
+		"帳戶/玉山銀行.png",
+		"帳戶/中國信託.png",
+		"帳戶/國泰銀行.png",
+		// ← 新增您的圖片
+	},
+	"轉帳": {
+		"轉帳/存款.png",
+		"轉帳/提款.png",
+		"轉帳/轉帳.png",
+		// ← 新增您的圖片
+	},
+	"居住": {
+		"居住/瓦斯費.png",
+		"居住/電費.png",
+		"居住/自來水費.png",
+		"居住/房租.png",
+		// ← 新增您的圖片
+	},
+	// 您之後新增其他分類時，直接在這裡繼續增加即可
+}
+
 func handleIcons(w http.ResponseWriter, r *http.Request) {
-	// 【功能說明】：回傳指定分類下的所有圖示檔名
-	// 例如 ?category=餐食、飲料 會回傳 ["餐食、飲料/早餐.png", "餐食、飲料/午餐.png", ...]
 	category := r.URL.Query().Get("category")
 	var files []string
 
 	if category != "" {
-		// 讀取子資料夾（embed 後的虛擬 FS）
-		entries, err := iconFS.ReadDir(category)
-		if err == nil {
-			for _, e := range entries {
-				if !e.IsDir() {
-					files = append(files, category+"/"+e.Name())
-				}
-			}
-		} else {
-			// 若讀取失敗（極少發生），回傳空陣列，讓前端顯示「此分類尚無圖示」
-			files = []string{}
+		if list, ok := iconFiles[category]; ok {
+			files = list
 		}
 	} else {
-		// 無分類時掃描根目錄
-		entries, err := iconFS.ReadDir(".")
-		if err == nil {
-			for _, e := range entries {
-				if !e.IsDir() {
-					files = append(files, e.Name())
-				}
-			}
+		// 無分類時回傳所有分類的所有圖示（供 debug 使用）
+		for _, list := range iconFiles {
+			files = append(files, list...)
 		}
 	}
 
@@ -900,30 +942,16 @@ func handleIcons(w http.ResponseWriter, r *http.Request) {
 
 // ── 內建圖示分類 ─────────────────────────────────────────────────────────
 func handleIconCategories(w http.ResponseWriter, r *http.Request) {
-	// 【功能說明】：回傳所有分類資料夾名稱（供 icon-cat-tabs 使用）
-	defaults := []string{"餐食、飲料", "生活支出", "交通", "收入", "帳戶", "轉帳"}
-	seen := map[string]bool{}
-	result := make([]string, 0)
-
-	for _, d := range defaults {
-		if !seen[d] {
-			seen[d] = true
-			result = append(result, d)
-		}
+	// 直接使用固定列表，永遠穩定
+	defaults := []string{
+		"餐食、飲料",
+		"生活支出",
+		"交通",
+		"收入",
+		"帳戶",
+		"轉帳",
 	}
-
-	// 掃描 ../public/icon 下的所有子資料夾
-	entries, err := iconFS.ReadDir(".")
-	if err == nil {
-		for _, e := range entries {
-			if e.IsDir() && !seen[e.Name()] {
-				seen[e.Name()] = true
-				result = append(result, e.Name())
-			}
-		}
-	}
-
-	jsonResp(w, 200, result)
+	jsonResp(w, 200, defaults)
 }
 
 // ── Backup / Restore / Reset ──────────────────────────────────────────────
