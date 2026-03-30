@@ -3,6 +3,7 @@ package handler
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,6 +20,7 @@ import (
 
 // ── Redis client（全域，冷啟動時初始化）────────────────────────────────────
 var (
+	iconFS    embed.FS
 	rdb       *redis.Client
 	ctx       = context.Background()
 	redisOnce bool
@@ -859,12 +861,12 @@ func handleDelNoteTag(w http.ResponseWriter, r *http.Request, tid string) {
 
 // ── Icons ─────────────────────────────────────────────────────────────────
 func handleIcons(w http.ResponseWriter, r *http.Request) {
-	iconDir := "icon"
 	category := r.URL.Query().Get("category")
 	var files []string
+
 	if category != "" {
-		catDir := path.Join(iconDir, category)
-		entries, err := os.ReadDir(catDir)
+		catDir := path.Join("icon", category)
+		entries, err := iconFS.ReadDir(catDir)
 		if err == nil {
 			for _, e := range entries {
 				if !e.IsDir() {
@@ -873,7 +875,7 @@ func handleIcons(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else {
-		entries, err := os.ReadDir(iconDir)
+		entries, err := iconFS.ReadDir("icon")
 		if err == nil {
 			for _, e := range entries {
 				if !e.IsDir() {
@@ -882,22 +884,26 @@ func handleIcons(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+
 	sort.Strings(files)
 	jsonResp(w, 200, files)
 }
 
+// 內建圖示（預設分類 + 資料夾名稱）
 func handleIconCategories(w http.ResponseWriter, r *http.Request) {
-	iconDir := "icon"
 	defaults := []string{"餐食、飲料", "生活支出", "交通", "收入", "帳戶", "轉帳"}
 	seen := map[string]bool{}
 	result := make([]string, 0)
+
 	for _, d := range defaults {
 		if !seen[d] {
 			seen[d] = true
 			result = append(result, d)
 		}
 	}
-	entries, err := os.ReadDir(iconDir)
+
+	// 掃描 embed 資料夾中的其他子資料夾
+	entries, err := iconFS.ReadDir("icon")
 	if err == nil {
 		for _, e := range entries {
 			if e.IsDir() && !seen[e.Name()] {
@@ -906,6 +912,7 @@ func handleIconCategories(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+
 	jsonResp(w, 200, result)
 }
 
