@@ -19,7 +19,7 @@ import (
 
 // ── 嵌入 public/icon 資料夾（因為 index.go 在 api/ 資料夾）──────────────────
 //
-/* go:embed ../public/icon */
+// go:embed ../public/icon
 var iconFS embed.FS
 
 // ── Redis client（全域，冷啟動時初始化）────────────────────────────────────
@@ -864,11 +864,13 @@ func handleDelNoteTag(w http.ResponseWriter, r *http.Request, tid string) {
 
 // ── Icons ─────────────────────────────────────────────────────────────────
 func handleIcons(w http.ResponseWriter, r *http.Request) {
+	// 【功能說明】：回傳指定分類下的所有圖示檔名
+	// 例如 ?category=餐食、飲料 會回傳 ["餐食、飲料/早餐.png", "餐食、飲料/午餐.png", ...]
 	category := r.URL.Query().Get("category")
 	var files []string
 
 	if category != "" {
-		// 因為已 embed ../public/icon，所以這裡直接用分類名稱
+		// 讀取子資料夾（embed 後的虛擬 FS）
 		entries, err := iconFS.ReadDir(category)
 		if err == nil {
 			for _, e := range entries {
@@ -876,8 +878,12 @@ func handleIcons(w http.ResponseWriter, r *http.Request) {
 					files = append(files, category+"/"+e.Name())
 				}
 			}
+		} else {
+			// 若讀取失敗（極少發生），回傳空陣列，讓前端顯示「此分類尚無圖示」
+			files = []string{}
 		}
 	} else {
+		// 無分類時掃描根目錄
 		entries, err := iconFS.ReadDir(".")
 		if err == nil {
 			for _, e := range entries {
@@ -894,6 +900,7 @@ func handleIcons(w http.ResponseWriter, r *http.Request) {
 
 // ── 內建圖示分類 ─────────────────────────────────────────────────────────
 func handleIconCategories(w http.ResponseWriter, r *http.Request) {
+	// 【功能說明】：回傳所有分類資料夾名稱（供 icon-cat-tabs 使用）
 	defaults := []string{"餐食、飲料", "生活支出", "交通", "收入", "帳戶", "轉帳"}
 	seen := map[string]bool{}
 	result := make([]string, 0)
