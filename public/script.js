@@ -1466,115 +1466,107 @@ document.querySelectorAll('.type-tab[data-t]').forEach(t=>t.addEventListener('cl
   renderAddItems(); calcTotal();
 }));
 
-function renderAddItems(){
-  // show or hide "新增一項" 按鈕; 支出與收入允許多筆
-  const addBtn=document.getElementById('add-item-btn');
-  addBtn.style.display = (S.addType==='expense' || S.addType==='income' ? 'block' : 'none');
+/**
+ * 渲染「新增紀錄」頁面的動態項目欄位
+ * 已根據需求優化：存錢筒隱藏、收入簡化、程式碼壓縮
+ */
+function renderAddItems() {
+  const list = document.getElementById('items-list');
+  const addBtn = document.getElementById('add-item-btn');
+  if (!list || !addBtn) return;
 
-  const list=document.getElementById('items-list'); list.innerHTML='';
-  const accountsOptions=(S.cfg.accounts||[]).map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
-  S.addItems.forEach((it,i)=>{
-    const row=document.createElement('div'); row.className='item-row';
-    if(S.addType==='transfer'){
-      // Ensure we have a default from/to even when the user doesn't touch selects
-      const accs=S.cfg.accounts||[];
-      if(accs.length){
-        it.from = it.from || accs[0].id;
-        it.to   = it.to   || (accs[1]?.id||accs[0].id);
-      }
-      let html='';
-      html += '<div style="flex:1;display:flex;flex-direction:column;margin-right:4px">';
-      html += '<span style="font-size:11px;color:var(--t3);margin-bottom:2px">帳戶</span>';
-      // build options with potential selected
-      const fromOpts=(S.cfg.accounts||[]).map(a=>`<option value="${a.id}"${it.from===a.id?" selected":""}>${a.name}</option>`).join('');
-      const toOpts=(S.cfg.accounts||[]).map(a=>`<option value="${a.id}"${it.to===a.id?" selected":""}>${a.name}</option>`).join('');
-      html += `<select data-i="${i}" data-f="from" class="fsel">${fromOpts}</select>`;
-      html += '</div>';
-      html += '<span style="font-size:12px;align-self:center">→</span>';
-      html += '<div style="flex:1;display:flex;flex-direction:column;margin-left:4px">';
-      html += '<span style="font-size:11px;color:var(--t3);margin-bottom:2px">轉入帳戶</span>';
-      html += `<select data-i="${i}" data-f="to" class="fsel">${toOpts}</select>`;
-      html += '</div>';
-      html += `<input type="number" placeholder="金額" value="${it.amount||''}" data-i="${i}" data-f="amount" inputmode="decimal" style="flex:1;color:var(--acc);margin-left:8px">`;
-      if(S.addItems.length>1) html += `<button class="item-del" data-i="${i}">✕</button>`;
-      row.innerHTML = html;
-    } else if(S.addType==='income'){
-      const catName=it.categoryName||'分類';
-      row.innerHTML=`
-        <div style="flex:1.2;display:flex;flex-direction:column;gap:6px">
-          <button class="cat-btn" data-i="${i}" style="text-align:left;color:var(--t2)">${catName}</button>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="text" placeholder="備註" value="${it.note||''}" data-i="${i}" data-f="note" style="flex:1;text-align:left;color:var(--t2)" inputmode="text">
-          </div>
+  // 1. 判斷是否顯示「新增一項」按鈕：僅限支出允許多筆記錄
+  // 需求修改：將收入也改為單筆簡潔模式，故只有支出顯示此按鈕
+  addBtn.style.display = (S.addType === 'expense') ? 'block' : 'none';
+
+  // 2. 如果是「存錢筒 (piggy)」或「轉帳 (transfer)」，清空項目清單並跳出 (因為有專屬欄位)
+  // 需求修改：存錢筒頁面不顯示記帳項目欄位
+  if (S.addType === 'piggy' || S.addType === 'transfer') {
+    list.innerHTML = '';
+    return;
+  }
+
+  list.innerHTML = '';
+  const accs = S.cfg.accounts || [];
+
+  S.addItems.forEach((it, i) => {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    const catName = it.categoryName || '分類';
+
+    if (S.addType === 'income') {
+      // 需求修改：收入頁面刪除「X1@」及數量欄位，改為簡潔的「名稱+金額」
+      row.innerHTML = `
+        <div style="flex:1.5; display:flex; flex-direction:column; gap:6px">
+          <button class="cat-btn" data-i="${i}" style="text-align:left; color:var(--t2)">${catName}</button>
+          <input type="text" placeholder="收入來源備註" value="${it.note || ''}" data-i="${i}" data-f="note" class="finp-s">
         </div>
-        <span style="color:var(--t3);font-size:11px;flex-shrink:0">×</span>
-        <input type="number" placeholder="數量" value="${it.qty||1}" data-i="${i}" data-f="qty" inputmode="decimal" style="flex:1">
-        <span style="color:var(--t3);font-size:11px;flex-shrink:0">@</span>
-        <input type="number" placeholder="金額" value="${it.price||''}" data-i="${i}" data-f="price" inputmode="decimal" style="flex:1.5;color:var(--acc)">
-        ${S.addItems.length>1?`<button class="item-del" data-i="${i}">✕</button>`:''}`;
-    } else if(S.addType==='adjust'){
-      const accId=document.getElementById('f-acc')?.value;
-      const accObj=(S.cfg.accounts||[]).find(a=>a.id===accId);
-      const currentBal=accObj?fmt(accObj.balance||0):'0';
-      row.innerHTML=`
-        <div style="flex:1;display:flex;flex-direction:column;">
-          <span style="font-size:11px;color:var(--t3);margin-bottom:2px">調整後餘額</span>
-          <input type="number" placeholder="新餘額" value="${it.amount||''}" data-i="${i}" data-f="amount" inputmode="decimal" style="width:100%;color:var(--acc)">
+        <div style="flex:1; display:flex; flex-direction:column; align-items:flex-end">
+          <span style="font-size:11px; color:var(--t3); margin-bottom:2px">金額</span>
+          <input type="number" placeholder="0" value="${it.price || ''}" data-i="${i}" data-f="price" inputmode="decimal" style="width:100%; text-align:right; color:var(--acc); font-weight:bold">
+        </div>`;
+    } else if (S.addType === 'adjust') {
+      // 餘額調整模式
+      const accId = document.getElementById('f-acc')?.value;
+      const accObj = accs.find(a => a.id === accId);
+      row.innerHTML = `
+        <div style="flex:1; display:flex; flex-direction:column;">
+          <span style="font-size:11px; color:var(--t3); margin-bottom:2px">調整後餘額</span>
+          <input type="number" placeholder="新餘額" value="${it.amount || ''}" data-i="${i}" data-f="amount" inputmode="decimal" style="width:100%; color:var(--acc)">
         </div>
-        <div style="font-size:11px;color:var(--t3);margin-left:10px;white-space:nowrap;">當前: ${currentBal}</div>`;
+        <div style="font-size:11px; color:var(--t3); margin-left:10px">當前: ${fmt(accObj?.balance || 0)}</div>`;
     } else {
-      const catName=it.categoryName||'分類';
-      row.innerHTML=`
-        <div style="flex:1.2;display:flex;flex-direction:column;gap:6px">
-          <button class="cat-btn" data-i="${i}" style="text-align:left;color:var(--t2)">${catName}</button>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="text" placeholder="備註" value="${it.note}" data-i="${i}" data-f="note" style="flex:1;text-align:left;color:var(--t2)" inputmode="text">
-          </div>
+      // 支出模式：保留原本的多項目「數量 x 單價」結構
+      row.innerHTML = `
+        <div style="flex:1.2; display:flex; flex-direction:column; gap:6px">
+          <button class="cat-btn" data-i="${i}" style="text-align:left; color:var(--t2)">${catName}</button>
+          <input type="text" placeholder="項目備註" value="${it.note || ''}" data-i="${i}" data-f="note" class="finp-s">
         </div>
-        <span style="color:var(--t3);font-size:11px;flex-shrink:0">×</span>
-        <input type="number" placeholder="數量" value="${it.qty}" data-i="${i}" data-f="qty" inputmode="decimal" style="flex:1">
-        <span style="color:var(--t3);font-size:11px;flex-shrink:0">@</span>
-        <input type="number" placeholder="單價" value="${it.price}" data-i="${i}" data-f="price" inputmode="decimal" style="flex:1.5;color:var(--acc)">
-        ${S.addItems.length>1?`<button class="item-del" data-i="${i}">✕</button>`:''}`;
+        <span style="color:var(--t3); font-size:11px">×</span>
+        <input type="number" placeholder="1" value="${it.qty || 1}" data-i="${i}" data-f="qty" inputmode="decimal" style="flex:0.6; text-align:center">
+        <span style="color:var(--t3); font-size:11px">@</span>
+        <input type="number" placeholder="金額" value="${it.price || ''}" data-i="${i}" data-f="price" inputmode="decimal" style="flex:1.2; color:var(--acc)">
+        ${S.addItems.length > 1 ? `<button class="item-del" data-i="${i}">✕</button>` : ''}`;
     }
     list.appendChild(row);
 
-    // place note-tag selector outside the item row
-    if(S.addType==='expense' || S.addType==='income'){
-      const noteRow=document.createElement('div');
-      noteRow.className='item-note-tags-row';
-      noteRow.innerHTML=`<div id="item-note-tags-${i}" class="item-note-tags"></div>`;
-      list.appendChild(noteRow);
+    // 渲染支出/收入的標籤選用 (如果有備註的話)
+    if (S.addType === 'expense' || S.addType === 'income') {
+      const nt = document.createElement('div');
+      nt.className = 'item-note-tags-row';
+      nt.innerHTML = `<div id="item-note-tags-${i}" class="item-note-tags"></div>`;
+      list.appendChild(nt);
       renderItemNoteTags(i);
     }
   });
-  // bind events
-  list.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{
-    const it=S.addItems[+inp.dataset.i];
-    const f=inp.dataset.f;
-    if(S.addType==='transfer' && f==='amount') it.amount=inp.value;
-    else it[f]=inp.value;
-    calcTotal();
-    if(f==='note') renderItemNoteTags(+inp.dataset.i);
-  }));
-  // also track selects (used by transfer rows)
-  list.querySelectorAll('select').forEach(sel=>{
-    sel.addEventListener('change',()=>{
-      const it=S.addItems[+sel.dataset.i];
-      const f=sel.dataset.f;
-      it[f]=sel.value;
+
+  // 3. 統一綁定事件監聽 (邏輯壓縮)
+  list.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const it = S.addItems[+inp.dataset.i];
+      it[inp.dataset.f] = inp.value;
+      calcTotal();
+      if (inp.dataset.f === 'note') renderItemNoteTags(+inp.dataset.i);
+    });
+  });
+
+  list.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      S.selItemForCat = +btn.dataset.i;
+      renderModalCats(S.addType);
+      document.getElementById('cat-section').style.display = 'block';
+    });
+  });
+
+  list.querySelectorAll('.item-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      S.addItems.splice(+btn.dataset.i, 1);
+      renderAddItems();
       calcTotal();
     });
   });
-  list.querySelectorAll('.cat-btn').forEach(btn=>btn.addEventListener('click',()=>{
-    S.selItemForCat=+btn.dataset.i;
-    renderModalCats(S.addType);
-    document.getElementById('cat-section').style.display='block';
-  }));
-  list.querySelectorAll('.item-del').forEach(btn=>btn.addEventListener('click',()=>{
-    S.addItems.splice(+btn.dataset.i,1); renderAddItems(); calcTotal();
-  }));
 }
+
 function calcTotal(){
   let t=0;
   if(S.addType==='transfer'){
