@@ -348,14 +348,8 @@ function switchAccTab(tab){
 
 /* ── 負債分類 ── */
 const DEBT_CATS=[
-  {id:'loan',      name:'貸款',     color:'#DC2626', children:[
-    {id:'car_loan',     name:'車貸', color:'#FF5F6D'},
-    {id:'home_loan',    name:'房貸', color:'#F97316'},
-    {id:'personal_loan',name:'信貸', color:'#FB923C'},
-  ]},
-  {id:'installment',name:'分期',    color:'#7C3AED', children:[
-    {id:'shopping_installment',name:'購物分期',color:'#A78BFA'},
-  ]},
+  {id:'loan',      name:'貸款',     color:'#DC2626'},
+  {id:'installment',name:'分期',    color:'#7C3AED'},
   {id:'borrow',     name:'借款',     color:'#0EA5E9'},
   {id:'credit_card',name:'信用卡費', color:'#F59E0B'},
 ];
