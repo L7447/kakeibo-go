@@ -196,7 +196,7 @@
       <div class="cat-grid" id="modal-cat-grid"></div>
     </div>
     <!-- 記帳項目 -->
-    <div class="items-section" id="items-section-container">
+    <div class="items-section">
       <div class="items-lbl">記帳項目</div>
       <div id="items-list"></div>
       <button class="add-item-btn" id="add-item-btn">＋ 新增一項</button>
@@ -204,14 +204,14 @@
     <!-- 日期時間 -->
     <div style="display:flex;gap:8px;margin-bottom:14px">
       <div class="fg" style="flex:1">
-        <label>日期</label>
-        <input type="date" class="finp" id="f-date-vis">
+        <label style="font-size:11px;color:var(--t3);letter-spacing:.7px">日期</label>
+        <input type="date" class="finp" id="f-date-vis" oninput="document.getElementById('f-date').value=this.value;syncDateBadge(this.value,document.getElementById('f-time-vis').value)">
       </div>
       <div class="fg" style="flex:1">
-        <label>時間</label>
-        <input type="time" class="finp" id="f-time-vis">
+        <label style="font-size:11px;color:var(--t3);letter-spacing:.7px">時間</label>
+        <input type="time" class="finp" id="f-time-vis" oninput="document.getElementById('f-time').value=this.value;syncDateBadge(document.getElementById('f-date-vis').value,this.value)">
       </div>
-    </div>    
+    </div>
     <!-- 帳戶（支出/收入/調整 standalone，轉帳/存錢筒隱藏）-->
     <div id="standalone-acc" style="margin-bottom:14px;display:none">
       <div class="fg">
@@ -224,13 +224,6 @@
       <div class="fg">
         <label style="font-size:11px;color:var(--t3);letter-spacing:.7px">商家</label>
         <select class="fsel" id="f-mer"></select>
-      </div>
-    </div>
-
-    <div id="transfer-note-row" style="display:none; margin-top:10px;">
-      <div class="fg">
-        <label>轉帳備註</label>
-        <input type="text" class="finp" id="f-transfer-note" placeholder="例如：生活費">
       </div>
     </div>
     <!-- 備註（存錢筒專用，在最下方）-->
@@ -324,7 +317,7 @@
 <div id="add-cat-overlay">
   <div id="add-cat-box">
     <h3>新增類別</h3>
-    <div class="fg"><label>名稱</label><input type="text" class="finp" id="ncat-name" placeholder=""></div>
+    <div class="fg"><label>名稱</label><input type="text" class="finp" id="ncat-name" placeholder="例：交通、餐飲"></div>
     <div class="fg"><label>顏色</label>
       <div style="display:flex;align-items:center;gap:8px">
         <input type="color" id="ncat-colorpicker" value="#8B909A" style="width:40px;height:38px;padding:2px;border:1px solid var(--border);border-radius:var(--rs);cursor:pointer;background:var(--sf2)">
