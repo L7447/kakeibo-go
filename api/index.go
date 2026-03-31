@@ -58,13 +58,15 @@ func getRedis() *redis.Client {
 var defaultSettings = map[string]interface{}{
 	"categories": map[string]interface{}{
 		"expense": []interface{}{
-			map[string]interface{}{"id": "food", "name": "餐食、飲料", "color": "#FF5F6D"},
-			map[string]interface{}{"id": "transport", "name": "交通", "color": "#FF9A5C"},
-			map[string]interface{}{"id": "shopping", "name": "購物", "color": "#FFD166"},
+			map[string]interface{}{"id": "food", "name": "食", "color": "#FF5F6D"},
+			map[string]interface{}{"id": "clothing", "name": "衣", "color": "#7B5EA7"},
+			map[string]interface{}{"id": "housing", "name": "住", "color": "#FFD166"},
+			map[string]interface{}{"id": "transport", "name": "行", "color": "#FF9A5C"},
+			map[string]interface{}{"id": "shopping", "name": "生活支出", "color": "#FFD166"},
+			map[string]interface{}{"id": "entertainment", "name": "學", "color": "#4CC9F0"},
 			map[string]interface{}{"id": "entertainment", "name": "娛樂", "color": "#4CC9F0"},
+			map[string]interface{}{"id": "education", "name": "3C產品", "color": "#4895EF"},
 			map[string]interface{}{"id": "health", "name": "醫療", "color": "#06D6A0"},
-			map[string]interface{}{"id": "education", "name": "教育", "color": "#4895EF"},
-			map[string]interface{}{"id": "home", "name": "居家", "color": "#7B5EA7"},
 			map[string]interface{}{"id": "other", "name": "其他", "color": "#8B909A"},
 		},
 		"income": []interface{}{
@@ -866,33 +868,71 @@ func handleDelNoteTag(w http.ResponseWriter, r *http.Request, tid string) {
 // 【重要修正】：因為 embed.FS 在 Vercel 上對中文資料夾不穩定，改用硬編碼方式
 // 這樣最穩定，且未來新增圖片只需在下面的 map 增加檔名即可
 var iconFiles = map[string][]string{
-	"餐食、飲料": {
-		"餐食、飲料/早餐.png",
-		"餐食、飲料/午餐.png",
-		"餐食、飲料/晚餐.png",
-		"餐食、飲料/消夜.png",
-		"餐食、飲料/飲料.png",
-		"餐食、飲料/麵包.png",
-		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/餐食、飲料/ 完全一樣）
+	"食": {
+		"食/早餐.png",
+		"食/午餐.png",
+		"食/晚餐.png",
+		"食/消夜.png",
+		"食/飲料.png",
+		"食/麵包.png",
+		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/食/ 完全一樣）
+	},
+	"衣": {
+		"衣/衣服.png",
+		"衣/褲子.png",
+		"衣/鞋子.png",
+		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/衣/ 完全一樣）
+	},
+	"住": {
+		"住/房租.png",
+		"住/自來水費.png",
+		"住/瓦斯費.png",
+		"住/電費.png",
+		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/住/ 完全一樣）
+	},
+	"行": {
+		"行/加油費.png",
+		"行/保養.png",
+		"行/維修.png",
+		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/行/ 完全一樣）
 	},
 	"生活支出": {
 		"生活支出/健保費.png",
 		"生活支出/剪髮.png",
 		"生活支出/手機通話費.png",
 		"生活支出/網路費.png",
-		// ← 新增您的圖片
+		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/生活支出/ 完全一樣）
 	},
-	"交通": {
-		"交通/保養.png",
-		"交通/加油費.png",
-		"交通/維修.png",
-		// ← 請把您 GitHub public/icon/交通/ 裡的所有檔名全部複製到這裡
+	"學": {
+		"學/學校.png",
+		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/學/ 完全一樣）
+	},
+	"娛樂": {
+		"娛樂/電影.png",
+		"娛樂/遊戲.png",
+		"娛樂/旅遊.png",
+		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/娛樂/ 完全一樣）
+	},
+	"3C產品": {
+		"3C產品/手機.png",
+		"3C產品/電腦.png",
+		"3C產品/平板.png",
+		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/3C產品/ 完全一樣）
+	},
+	"醫療": {
+		"醫療/醫療費.png",
+		"醫療/藥局.png",
+		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/醫療/ 完全一樣）
+	},
+	"其他": {
+		"其他/貸款.png",
+		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/其他/ 完全一樣）
 	},
 	"收入": {
 		"收入/薪水.png",
 		"收入/獎金.png",
 		"收入/投資理財.png",
-		// ← 新增您的圖片
+		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/收入/ 完全一樣）
 	},
 	"帳戶": {
 		"帳戶/icash pay.png",
@@ -903,22 +943,14 @@ var iconFiles = map[string][]string{
 		"帳戶/玉山銀行.png",
 		"帳戶/中國信託.png",
 		"帳戶/國泰銀行.png",
-		// ← 新增您的圖片
+		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/帳戶/ 完全一樣）
 	},
 	"轉帳": {
 		"轉帳/存款.png",
 		"轉帳/提款.png",
 		"轉帳/轉帳.png",
-		// ← 新增您的圖片
+		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/轉帳/ 完全一樣）
 	},
-	"居住": {
-		"居住/瓦斯費.png",
-		"居住/電費.png",
-		"居住/自來水費.png",
-		"居住/房租.png",
-		// ← 新增您的圖片
-	},
-	// 您之後新增其他分類時，直接在這裡繼續增加即可
 }
 
 func handleIcons(w http.ResponseWriter, r *http.Request) {
