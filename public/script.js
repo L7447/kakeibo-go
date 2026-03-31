@@ -121,24 +121,25 @@ function toast(msg, duration){
   const el=document.createElement('div');
   el.className='_toast_el';
   el.textContent=msg;
+  // 用 setAttribute style 確保 iOS 能正確套用
   el.setAttribute('style',
-    'position:fixed !important;' +
-    'top:50% !important;' +
-    'left:50% !important;' +
-    'transform:translate(-50%, -50%) !important;' +
-    'background:#1e293b !important;' +
-    'color:#fff !important;' +
-    'padding:12px 22px !important;' +
-    'border-radius:28px !important;' +
-    'font-size:14px !important;' +
-    'font-weight:500 !important;' +
-    'z-index:2147483647 !important;' +
-    'max-width:85vw !important;' +
-    'text-align:center !important;' +
-    'box-shadow:0 6px 24px rgba(0,0,0,0.4) !important;' +
-    'pointer-events:none !important;'
+    'position:fixed !important;'
+    +'bottom:80px !important;'
+    +'left:50% !important;'
+    +'transform:translateX(-50%) !important;'
+    +'background:#1e293b !important;'
+    +'color:#fff !important;'
+    +'padding:12px 22px !important;'
+    +'border-radius:28px !important;'
+    +'font-size:14px !important;'
+    +'font-weight:500 !important;'
+    +'z-index:2147483647 !important;'
+    +'max-width:85vw !important;'
+    +'text-align:center !important;'
+    +'box-shadow:0 6px 24px rgba(0,0,0,0.4) !important;'
+    +'pointer-events:none !important;'
   );
-  document.documentElement.appendChild(el);
+  document.documentElement.appendChild(el); // 掛在 <html> 不是 <body>
   setTimeout(()=>{ el.remove(); }, duration||2500);
 }
 
@@ -231,7 +232,7 @@ const closeOverlay = id=>{
 };
 
 /* ══════════════════════════════════════════════
-   帳戶總覽（已調整為上下雙容器設計 + 金額左移）
+   帳戶總覽
 ══════════════════════════════════════════════ */
 let ACC_GROUPS=[];
 
@@ -239,38 +240,26 @@ function renderAccounts(){
   const container=document.getElementById('acc-groups');
   const summary=document.getElementById('acc-summary');
   const accs=S.cfg.accounts||[];
+  // overall total
   const posTotal = accs.reduce((s,a)=>s+Math.max(0,parseFloat(a.balance)||0),0);
   const negTotal = accs.reduce((s,a)=>s+Math.max(0,-(parseFloat(a.balance)||0)),0);
+  // 負債列表總額（localStorage）
   const debtItems = advLoad('debt');
   const debtTotal = debtItems.reduce((s,d)=>s+(parseFloat(d.amount)||0),0);
   const displayDebt = Math.max(negTotal, debtTotal);
   const globalTotal = posTotal - displayDebt;
-
-  const netColor = globalTotal >= 0 ? '#22C55E' : 'var(--red)';
-  const netDisplay = globalTotal >= 0 ? fmt(globalTotal) : fmt(Math.abs(globalTotal));
-
+  const totalColor = globalTotal>=0 ? '#22C55E' : 'var(--red)';
   summary.innerHTML = `
-    <div class="acc-net-container">
-      <div class="acc-net-left">
-        <div class="title">淨資產</div>
-        <div class="currency">TWD</div>
+    <div class="acc-summary-header">
+      <div class="acc-summary-left">
+        <div class="acc-summary-title">總額</div>
+        <div class="acc-summary-currency">TWD</div>
       </div>
-      <div class="acc-net-amount" style="color:${netColor}">${netDisplay}</div>
+      <div class="acc-summary-amount" style="color:${totalColor}">${fmt(globalTotal)}</div>
     </div>
-    <!-- 好看的標籤容器 -->
-    <div class="acc-break-container">
-      <div class="acc-assets">
-        <div class="acc-break-tag">
-          <span class="label">總資產</span>
-          <span class="amt" style="color:var(--blue)">${fmt(posTotal)}</span>
-        </div>
-      </div>
-      <div class="acc-liab">
-        <div class="acc-break-tag">
-          <span class="label">總負債</span>
-          <span class="amt" style="color:var(--red)">${fmt(displayDebt)}</span>
-        </div>
-      </div>
+    <div class="acc-summary-break">
+      <span>總資產 ${fmt(posTotal)}</span>
+      <span class="liab" style="cursor:pointer;text-decoration:underline dotted;" onclick="switchAccTab('debt')">總負債 ${fmt(displayDebt)}</span>
     </div>`;
 
   container.innerHTML='';
@@ -317,6 +306,7 @@ function renderAccounts(){
     const hdr=card.querySelector('.grp-header');
     const body=card.querySelector('.grp-body');
     const arrow=card.querySelector('.grp-arrow');
+    // make each account balance clickable to filter
     body.querySelectorAll('.acc-row').forEach(row=>{
       const aid=row.dataset.aid;
       row.querySelector('.acc-bal').style.cursor='pointer';
@@ -326,6 +316,7 @@ function renderAccounts(){
         goPage('home');
       });
     });
+    // 預設展開
     body.classList.add('open'); arrow.classList.add('open');
     hdr.addEventListener('click',()=>{
       body.classList.toggle('open'); arrow.classList.toggle('open');
@@ -333,6 +324,7 @@ function renderAccounts(){
     container.appendChild(card);
   });
 }
+
 /* ══════════════════════════════════════════════
    帳戶頁 資產/負債 切換
 ══════════════════════════════════════════════ */
@@ -366,27 +358,25 @@ function findDebtCat(id){
   return flatDebtCats(DEBT_CATS).find(c=>c.id===id)||{id,name:id,color:'#8B909A'};
 }
 
-/* ── 負債列表（已移除總額欄，將新增按鈕移至頂部） ── */
+/* ── 負債列表 ── */
 function renderDebtSection(){
-  const el = document.getElementById('acc-debt-section');
-  const items = advLoad('debt');
-  const total = items.reduce((s,d)=>s+(parseFloat(d.amount)||0),0);
-  
-  let html = '';
-
-  // 原「負債總額欄」位置 → 現在放「＋新增負債」按鈕
-  html += '<button onclick="openDebtForm()" style="width:100%;padding:14px;margin-bottom:20px;background:var(--sf2);border:1px dashed var(--border);border-radius:var(--rs);color:var(--t2);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:.15s;">＋ 新增負債</button>';
-
+  const el=document.getElementById('acc-debt-section');
+  const items=advLoad('debt');
+  const total=items.reduce((s,d)=>s+(parseFloat(d.amount)||0),0);
+  let html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
+    +'<span style="font-size:13px;font-weight:600;color:var(--t1);">負債總額</span>'
+    +'<span style="font-family:var(--mono);font-size:20px;font-weight:800;color:var(--red);">NT$ '+fmt(total)+'</span>'
+    +'</div>';
   if(!items.length){
-    html += '<div class="empty-tip" style="padding:32px 0;text-align:center">尚無負債記錄</div>';
+    html+='<div class="empty-tip" style="padding:24px 0">尚無負債記錄<br>點 ＋ 新增</div>';
   } else {
-    html += items.map((d,i)=>{
-      const cat = findDebtCat(d.category);
-      const paid = parseFloat(d.paid||0);
-      const amt = parseFloat(d.amount||0);
-      const pct = amt>0?Math.min(100,Math.round(paid/amt*100)):0;
-      const remain = Math.max(0,amt-paid);
-      const barColor = pct>=100?'var(--acc)':pct>=70?'#FFD166':'var(--red)';
+    html+=items.map((d,i)=>{
+      const cat=findDebtCat(d.category);
+      const paid=parseFloat(d.paid||0);
+      const amt=parseFloat(d.amount||0);
+      const pct=amt>0?Math.min(100,Math.round(paid/amt*100)):0;
+      const remain=Math.max(0,amt-paid);
+      const barColor=pct>=100?'var(--acc)':pct>=70?'#FFD166':'var(--red)';
       return '<div class="debt-card">'
         +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
         +'<div style="display:flex;align-items:center;gap:8px;">'
@@ -398,10 +388,12 @@ function renderDebtSection(){
         +'<button onclick="openDebtForm('+i+')" style="padding:4px 10px;border-radius:999px;background:var(--sf2);color:var(--t2);border:1px solid var(--border);font-size:12px;cursor:pointer;">✎</button>'
         +'<button onclick="deleteDebt('+i+')" class="row-del-btn" style="width:28px;height:28px;">✕</button>'
         +'</div></div>'
+        // 金額列
         +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);margin-bottom:6px;">'
         +'<span>總額 <strong style="color:var(--red);font-family:var(--mono);">NT$ '+fmt(amt)+'</strong></span>'
         +'<span>月還款 <strong style="color:var(--t1);font-family:var(--mono);">NT$ '+fmt(d.payment||0)+'</strong></span>'
         +'</div>'
+        // 進度條
         +'<div style="height:4px;background:var(--sf2);border-radius:2px;margin-bottom:6px;overflow:hidden;">'
         +'<div style="width:'+pct+'%;height:100%;background:'+barColor+';border-radius:2px;"></div></div>'
         +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);">'
@@ -413,8 +405,8 @@ function renderDebtSection(){
         +'</div>';
     }).join('');
   }
-  
-  el.innerHTML = html;
+  html+='<button onclick="openDebtForm()" style="width:100%;padding:12px;margin-top:8px;background:var(--sf2);border:1px dashed var(--border);border-radius:var(--rs);color:var(--t2);font-size:13px;cursor:pointer;font-family:var(--sans);">＋ 新增負債</button>';
+  el.innerHTML=html;
 }
 
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -1165,11 +1157,7 @@ function syncDateBadge(dateVal, timeVal){
   if(ft&&!ft._sb){ft._sb=1;ft.addEventListener('change',function(){syncDateBadge();});}
 }
 
-/* ══════════════════════════════════════════════
-   新增記錄頁 - 存錢筒模式專用調整
-   【本次修改】：存錢筒頁面完全隱藏「記帳項目」欄
-══════════════════════════════════════════════ */
-function openAddPage(record=null){
+function openAddPage(rec){
   // track editing record
   if(rec){
     S.editRec = rec;
@@ -1204,14 +1192,7 @@ function openAddPage(record=null){
   renderTransferTypes();
   renderModalCats(S.addType);
   document.getElementById('cat-section').style.display='none';
-  // apply new layout visibility應用新的版面可見性
-
-  // 【新增】存錢筒模式時隱藏記帳項目欄
-  const itemsSection=document.getElementById('items-section');
-  if(itemsSection){
-    itemsSection.style.display = (S.addType==='piggy') ? 'none' : 'block';
-  }
-
+  // apply new layout visibility
   const _standaloneAcc2 = document.getElementById('standalone-acc');
   const _standaloneMer2 = document.getElementById('standalone-mer');
   const _piggyNoteRow2  = document.getElementById('piggy-note-row');
@@ -1466,81 +1447,115 @@ document.querySelectorAll('.type-tab[data-t]').forEach(t=>t.addEventListener('cl
   renderAddItems(); calcTotal();
 }));
 
-/**
- * 壓縮後的 renderAddItems 函式
- * 功能：處理存錢筒隱藏、收入簡化、支出多筆
- */
-function renderAddItems() {
-  const list = document.getElementById('items-list');
-  const addBtn = document.getElementById('add-item-btn');
-  if (!list || !addBtn) return;
+function renderAddItems(){
+  // show or hide "新增一項" 按鈕; 支出與收入允許多筆
+  const addBtn=document.getElementById('add-item-btn');
+  addBtn.style.display = (S.addType==='expense' || S.addType==='income' ? 'block' : 'none');
 
-  // 僅「支出」模式顯示「新增一項」按鈕
-  addBtn.style.display = (S.addType === 'expense') ? 'block' : 'none';
-
-  // 若為存錢筒或轉帳，清空動態項目區域 (使用靜態 HTML 欄位)
-  if (S.addType === 'piggy' || S.addType === 'transfer') {
-    list.innerHTML = '';
-    return;
-  }
-
-  list.innerHTML = '';
-  S.addItems.forEach((it, i) => {
-    const row = document.createElement('div');
-    row.className = 'item-row';
-    const catName = it.categoryName || '分類';
-
-    if (S.addType === 'income') {
-      // 收入模式：刪除 X1@，改為簡潔版「備註 + 金額」
-      row.innerHTML = `
-        <div style="flex:1.5; display:flex; flex-direction:column; gap:4px">
-          <button class="cat-btn" data-i="${i}">${catName}</button>
-          <input type="text" placeholder="備註" value="${it.note || ''}" data-i="${i}" data-f="note" class="finp-s">
+  const list=document.getElementById('items-list'); list.innerHTML='';
+  const accountsOptions=(S.cfg.accounts||[]).map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+  S.addItems.forEach((it,i)=>{
+    const row=document.createElement('div'); row.className='item-row';
+    if(S.addType==='transfer'){
+      // Ensure we have a default from/to even when the user doesn't touch selects
+      const accs=S.cfg.accounts||[];
+      if(accs.length){
+        it.from = it.from || accs[0].id;
+        it.to   = it.to   || (accs[1]?.id||accs[0].id);
+      }
+      let html='';
+      html += '<div style="flex:1;display:flex;flex-direction:column;margin-right:4px">';
+      html += '<span style="font-size:11px;color:var(--t3);margin-bottom:2px">帳戶</span>';
+      // build options with potential selected
+      const fromOpts=(S.cfg.accounts||[]).map(a=>`<option value="${a.id}"${it.from===a.id?" selected":""}>${a.name}</option>`).join('');
+      const toOpts=(S.cfg.accounts||[]).map(a=>`<option value="${a.id}"${it.to===a.id?" selected":""}>${a.name}</option>`).join('');
+      html += `<select data-i="${i}" data-f="from" class="fsel">${fromOpts}</select>`;
+      html += '</div>';
+      html += '<span style="font-size:12px;align-self:center">→</span>';
+      html += '<div style="flex:1;display:flex;flex-direction:column;margin-left:4px">';
+      html += '<span style="font-size:11px;color:var(--t3);margin-bottom:2px">轉入帳戶</span>';
+      html += `<select data-i="${i}" data-f="to" class="fsel">${toOpts}</select>`;
+      html += '</div>';
+      html += `<input type="number" placeholder="金額" value="${it.amount||''}" data-i="${i}" data-f="amount" inputmode="decimal" style="flex:1;color:var(--acc);margin-left:8px">`;
+      if(S.addItems.length>1) html += `<button class="item-del" data-i="${i}">✕</button>`;
+      row.innerHTML = html;
+    } else if(S.addType==='income'){
+      const catName=it.categoryName||'分類';
+      row.innerHTML=`
+        <div style="flex:1.2;display:flex;flex-direction:column;gap:6px">
+          <button class="cat-btn" data-i="${i}" style="text-align:left;color:var(--t2)">${catName}</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" placeholder="備註" value="${it.note||''}" data-i="${i}" data-f="note" style="flex:1;text-align:left;color:var(--t2)" inputmode="text">
+          </div>
         </div>
-        <div style="flex:1; text-align:right">
-          <span style="font-size:11px; color:var(--t3)">金額</span>
-          <input type="number" placeholder="0" value="${it.price || ''}" data-i="${i}" data-f="price" inputmode="decimal" style="width:100%; text-align:right; color:var(--acc); font-weight:bold">
-        </div>`;
+        <span style="color:var(--t3);font-size:11px;flex-shrink:0">×</span>
+        <input type="number" placeholder="數量" value="${it.qty||1}" data-i="${i}" data-f="qty" inputmode="decimal" style="flex:1">
+        <span style="color:var(--t3);font-size:11px;flex-shrink:0">@</span>
+        <input type="number" placeholder="金額" value="${it.price||''}" data-i="${i}" data-f="price" inputmode="decimal" style="flex:1.5;color:var(--acc)">
+        ${S.addItems.length>1?`<button class="item-del" data-i="${i}">✕</button>`:''}`;
+    } else if(S.addType==='adjust'){
+      const accId=document.getElementById('f-acc')?.value;
+      const accObj=(S.cfg.accounts||[]).find(a=>a.id===accId);
+      const currentBal=accObj?fmt(accObj.balance||0):'0';
+      row.innerHTML=`
+        <div style="flex:1;display:flex;flex-direction:column;">
+          <span style="font-size:11px;color:var(--t3);margin-bottom:2px">調整後餘額</span>
+          <input type="number" placeholder="新餘額" value="${it.amount||''}" data-i="${i}" data-f="amount" inputmode="decimal" style="width:100%;color:var(--acc)">
+        </div>
+        <div style="font-size:11px;color:var(--t3);margin-left:10px;white-space:nowrap;">當前: ${currentBal}</div>`;
     } else {
-      // 支出模式：保留原本結構
-      row.innerHTML = `
-        <div style="flex:1.2; display:flex; flex-direction:column; gap:4px">
-          <button class="cat-btn" data-i="${i}">${catName}</button>
-          <input type="text" placeholder="備註" value="${it.note || ''}" data-i="${i}" data-f="note" class="finp-s">
+      const catName=it.categoryName||'分類';
+      row.innerHTML=`
+        <div style="flex:1.2;display:flex;flex-direction:column;gap:6px">
+          <button class="cat-btn" data-i="${i}" style="text-align:left;color:var(--t2)">${catName}</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" placeholder="備註" value="${it.note}" data-i="${i}" data-f="note" style="flex:1;text-align:left;color:var(--t2)" inputmode="text">
+          </div>
         </div>
-        <span style="color:var(--t3)">×</span>
-        <input type="number" value="${it.qty || 1}" data-i="${i}" data-f="qty" style="flex:0.6; text-align:center">
-        <span style="color:var(--t3)">@</span>
-        <input type="number" value="${it.price || ''}" data-i="${i}" data-f="price" style="flex:1.2; color:var(--acc)">
-        ${S.addItems.length > 1 ? `<button class="item-del" data-i="${i}">✕</button>` : ''}`;
+        <span style="color:var(--t3);font-size:11px;flex-shrink:0">×</span>
+        <input type="number" placeholder="數量" value="${it.qty}" data-i="${i}" data-f="qty" inputmode="decimal" style="flex:1">
+        <span style="color:var(--t3);font-size:11px;flex-shrink:0">@</span>
+        <input type="number" placeholder="單價" value="${it.price}" data-i="${i}" data-f="price" inputmode="decimal" style="flex:1.5;color:var(--acc)">
+        ${S.addItems.length>1?`<button class="item-del" data-i="${i}">✕</button>`:''}`;
     }
     list.appendChild(row);
-  });
 
-  // 重新綁定所有 input 事件
-  list.querySelectorAll('input').forEach(inp => {
-    inp.addEventListener('input', () => {
-      const it = S.addItems[+inp.dataset.i];
-      it[inp.dataset.f] = inp.value;
+    // place note-tag selector outside the item row
+    if(S.addType==='expense' || S.addType==='income'){
+      const noteRow=document.createElement('div');
+      noteRow.className='item-note-tags-row';
+      noteRow.innerHTML=`<div id="item-note-tags-${i}" class="item-note-tags"></div>`;
+      list.appendChild(noteRow);
+      renderItemNoteTags(i);
+    }
+  });
+  // bind events
+  list.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{
+    const it=S.addItems[+inp.dataset.i];
+    const f=inp.dataset.f;
+    if(S.addType==='transfer' && f==='amount') it.amount=inp.value;
+    else it[f]=inp.value;
+    calcTotal();
+    if(f==='note') renderItemNoteTags(+inp.dataset.i);
+  }));
+  // also track selects (used by transfer rows)
+  list.querySelectorAll('select').forEach(sel=>{
+    sel.addEventListener('change',()=>{
+      const it=S.addItems[+sel.dataset.i];
+      const f=sel.dataset.f;
+      it[f]=sel.value;
       calcTotal();
     });
   });
+  list.querySelectorAll('.cat-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    S.selItemForCat=+btn.dataset.i;
+    renderModalCats(S.addType);
+    document.getElementById('cat-section').style.display='block';
+  }));
+  list.querySelectorAll('.item-del').forEach(btn=>btn.addEventListener('click',()=>{
+    S.addItems.splice(+btn.dataset.i,1); renderAddItems(); calcTotal();
+  }));
 }
-
-// ── 初始化時強制修復導覽按鈕 ──
-document.addEventListener('DOMContentLoaded', () => {
-  const plusBtn = document.querySelector('.nav-item.add-btn');
-  if (plusBtn) {
-    plusBtn.addEventListener('click', () => {
-      // 開啟新增頁面並初始化
-      S.addType = 'expense';
-      S.addItems = [{ note: '', qty: 1, price: '', categoryName: '分類' }];
-      document.getElementById('add-page').classList.add('show');
-      renderAddItems();
-    });
-  }
-});
-
 function calcTotal(){
   let t=0;
   if(S.addType==='transfer'){
@@ -1568,15 +1583,7 @@ document.getElementById('add-cancel').addEventListener('click',()=>{
   document.getElementById('cat-section').style.display='none';
   closeOverlay('add-page');
 });
-// ══════════════════════════════════════════════
-// 新增記錄確認按鈕（右上角 ✓）
-// 已加入「紀錄新增中」1.5秒特效 + 原有儲存邏輯
-// ══════════════════════════════════════════════
-document.getElementById('add-confirm').addEventListener('click', async function(){
-  // === 立即顯示「紀錄新增中」訊息框（1.5秒）===
-  toast('紀錄新增中', 1500);
-
-  // ── 以下為您原本的完整儲存邏輯（已完整保留） ──
+document.getElementById('add-confirm').addEventListener('click',async()=>{
   try{
     let total=0;
     // ── 存錢筒模式 ──
@@ -1606,7 +1613,6 @@ document.getElementById('add-confirm').addEventListener('click', async function(
       _selPiggy=null;
       return;
     }
-
     if(S.addType==='transfer'){
       total=S.addItems.reduce((s,it)=>s+parseFloat(it.amount||0),0);
       if(!total){ toast('請輸入金額'); return; }
@@ -1620,14 +1626,13 @@ document.getElementById('add-confirm').addEventListener('click', async function(
     } else {
       total=S.addItems.reduce((s,it)=>s+(parseFloat(it.qty)||1)*(parseFloat(it.price)||0),0);
       if(!total){ toast('請輸入金額'); return; }
+      // ensure each item has category
       for(const it of S.addItems){ if(!it.category){ toast('請為每項選擇分類'); return; }}
     }
-
     let note=document.getElementById('f-note').value;
     if(S.addType==='adjust' && !note){
       note=`調整後 NT$ ${fmt(total)}`;
     }
-
     const payload={
       type:S.addType,
       items: S.addItems.map(it=>{
@@ -1644,22 +1649,21 @@ document.getElementById('add-confirm').addEventListener('click', async function(
       time:document.getElementById('f-time').value,
       note,
     };
-
+    // choose POST vs PUT depending on edit state
     if(S.editRec && S.editRec.id){
       await api(`/api/records/${S.editRec.id}`,{method:'PUT',body:JSON.stringify(payload)});
       S.editRec=null;
     } else {
       await api('/api/records',{method:'POST',body:JSON.stringify(payload)});
     }
-
     if(S.addType==='adjust'){
+      // keep account balance in sync with the adjusted value
       const accId = payload.account;
       await api(`/api/settings/accounts/${accId}`,{method:'PUT',body:JSON.stringify({balance:total})});
       await loadCfg();
     }
-
     document.getElementById('cat-section').style.display='none';
-
+    // 若選了存錢筒，自動存入
     if(_selPiggy!==null&&S.addType==='expense'){
       try{
         const piggies=advLoad('piggy');
@@ -1676,9 +1680,10 @@ document.getElementById('add-confirm').addEventListener('click', async function(
     } else {
       toast('記錄成功 ✓');
     }
-
     closeOverlay('add-page');
-
+    // after submitting a new record (or update), refresh the home view so the calendar
+    // and list update correctly. If the record is in a different month, move the
+    // calendar there first.
     const [y,m]=payload.date.split('-').map(s=>parseInt(s,10));
     S.calY=y; S.calM=m;
     S.selDate=payload.date;
@@ -1686,7 +1691,6 @@ document.getElementById('add-confirm').addEventListener('click', async function(
     await renderHome();
     goPage('home');
     if(document.getElementById('page-accounts').classList.contains('active')) renderAccounts();
-
   }catch(e){
     console.error(e);
     toast('新增失敗：'+(e.message||e));
@@ -3317,49 +3321,5 @@ document.addEventListener('click', async function(e) {
     await openDetail(recItem.dataset.id);
   }
 });
-
-// 新增記錄頁右上 ✓ 按鈕：先變深 → 水波紋特效
-function addRippleEffect() {
-  const confirmBtn = document.getElementById('add-confirm');
-  if (!confirmBtn) return;
-
-  confirmBtn.style.position = 'relative';
-  confirmBtn.style.overflow = 'hidden';
-
-  confirmBtn.addEventListener('click', function(e) {
-    // 步驟1：立即變深
-    this.classList.add('pressed');
-
-    // 步驟2：建立水波紋
-    const rect = this.getBoundingClientRect();
-    const ripple = document.createElement('span');
-    const size = Math.max(rect.width, rect.height) * 2.2;
-
-    ripple.style.position = 'absolute';
-    ripple.style.borderRadius = '50%';
-    ripple.style.background = 'rgba(255,255,255,0.85)';
-    ripple.style.width = ripple.style.height = `${size}px`;
-    ripple.style.left = `${e.clientX - rect.left - size/2}px`;
-    ripple.style.top = `${e.clientY - rect.top - size/2}px`;
-    ripple.style.transform = 'scale(0)';
-    ripple.style.animation = 'rippleAnim 0.6s linear forwards';
-    ripple.style.pointerEvents = 'none';
-
-    this.appendChild(ripple);
-
-    // 動畫結束後恢復原始顏色
-    setTimeout(() => {
-      this.classList.remove('pressed');
-      ripple.remove();
-    }, 600);
-  });
-}
-
-// 確保頁面載入後立即綁定
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', addRippleEffect);
-} else {
-  addRippleEffect();
-}
 
 init();
