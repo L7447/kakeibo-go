@@ -1171,29 +1171,29 @@ function syncDateBadge(dateVal, timeVal){
 ══════════════════════════════════════════════ */
 function openAddPage(record=null){
   // track editing record
-  if(rec){
-    S.editRec = rec;
+  if(record){
+    S.editRec = record;
   } else {
     S.editRec = null;
   }
   // optional record for editing
-  if(rec){
-    S.addType=rec.type||'expense';
+  if(record){
+    S.addType=record.type||'expense';
     if(S.addType==='transfer'){
-      S.transferCat = rec.category||'deposit';
+      S.transferCat = record.category||'deposit';
     }
     // prepare items
     if(S.addType==='transfer'){
-      S.addItems = (rec.items||[]).map(it=>({from:it.from||'',to:it.to||'',amount:it.amount||0}));
+      S.addItems = (record.items||[]).map(it=>({from:it.from||'',to:it.to||'',amount:it.amount||0}));
     } else if(S.addType==='adjust'){
-      S.addItems = (rec.items||[]).map(it=>({amount:it.amount||0}));
+      S.addItems = (record.items||[]).map(it=>({amount:it.amount||0}));
     } else {
-      S.addItems = (rec.items||[]).map(it=>({
+      S.addItems = (record.items||[]).map(it=>({
         qty:it.qty||'1',price:it.price||'',note:it.note||'',category:it.category||'',
         categoryName: (S.cfg.categories[S.addType]||[]).flatMap(c=>[c].concat(c.children||[])).find(x=>x.id===it.category)?.name||''
       }));
     }
-    S.selCat=rec.items&&rec.items[0]?rec.items[0].category:'';
+    S.selCat=record.items&&record.items[0]?record.items[0].category:'';
   } else {
     S.addType='expense'; S.addItems=[{qty:'1',price:'',note:'',category:'',categoryName:''}]; S.selCat='';
     _selPiggy=null;
@@ -1206,11 +1206,10 @@ function openAddPage(record=null){
   document.getElementById('cat-section').style.display='none';
   // apply new layout visibility應用新的版面可見性
 
-  // 【新增】存錢筒模式時隱藏記帳項目欄
-  const itemsSection=document.getElementById('items-section');
-  if(itemsSection){
-    itemsSection.style.display = (S.addType==='piggy') ? 'none' : 'block';
-  }
+  // 【新增】存錢筒 / 轉帳模式時隱藏記帳項目欄
+  document.querySelectorAll('.items-section').forEach(el=>{
+    el.style.display = (S.addType==='piggy') ? 'none' : '';
+  });
 
   const _standaloneAcc2 = document.getElementById('standalone-acc');
   const _standaloneMer2 = document.getElementById('standalone-mer');
@@ -1231,26 +1230,34 @@ function openAddPage(record=null){
   document.getElementById('add-item-btn').style.display = (S.addType==='expense'||S.addType==='income'?'block':'none');
   document.querySelectorAll('.items-section').forEach(el=>{ el.style.display=_isPiggy2?'none':''; });
   // date/time/note
-  if(rec){
-    document.getElementById('f-date').value=rec.date||todayStr();
-    document.getElementById('f-time').value=rec.time||nowTime();
-    document.getElementById('f-note').value=rec.note||'';
-    document.getElementById('f-acc').value=rec.account||'';
-    document.getElementById('f-to-acc').value=rec.to_account||'';
-    document.getElementById('f-mer').value=rec.merchant||'';
-    document.getElementById('f-exp').value=rec.expert||'';
+  if(record){
+    document.getElementById('f-date').value=record.date||todayStr();
+    document.getElementById('f-time').value=record.time||nowTime();
+    document.getElementById('f-note').value=record.note||'';
+    document.getElementById('f-acc').value=record.account||'';
+    document.getElementById('f-to-acc').value=record.to_account||'';
+    document.getElementById('f-mer').value=record.merchant||'';
+    document.getElementById('f-exp').value=record.expert||'';
+    // 轉帳備註
+    const _ftn=document.getElementById('f-transfer-note');
+    if(_ftn) _ftn.value=record.note||'';
   } else {
     document.getElementById('f-date').value=S.selDate||todayStr();
     document.getElementById('f-time').value=nowTime();
     document.getElementById('f-note').value='';
+    const _ftn=document.getElementById('f-transfer-note');
+    if(_ftn) _ftn.value='';
   }
+  // 轉帳備註欄位顯示控制
+  const _transferNoteRow=document.getElementById('transfer-note-row');
+  if(_transferNoteRow) _transferNoteRow.style.display=(S.addType==='transfer')?'':'none';
   document.getElementById('info-body').classList.remove('open');
   document.getElementById('info-toggle').classList.remove('open');
   renderPiggyTypeSection();
   renderAddItems(); calcTotal();
   // 直接傳值給 syncDateBadge，不靠讀取 input
-  var _d=rec?(rec.date||todayStr()):(S.selDate||todayStr());
-  var _t=rec?(rec.time||nowTime()):nowTime();
+  var _d=record?(record.date||todayStr()):(S.selDate||todayStr());
+  var _t=record?(record.time||nowTime()):nowTime();
   syncDateBadge(_d, _t);
   openOverlay('add-page');
 }
@@ -1462,6 +1469,13 @@ document.querySelectorAll('.type-tab[data-t]').forEach(t=>t.addEventListener('cl
     infoSecEl.style.display='';
     totalDispEl.style.display='';
   }
+  // 存錢筒時隱藏記帳項目欄；其餘顯示
+  document.querySelectorAll('.items-section').forEach(el=>{
+    el.style.display = (S.addType==='piggy') ? 'none' : '';
+  });
+  // 轉帳備註欄位顯示控制
+  const _tnr=document.getElementById('transfer-note-row');
+  if(_tnr) _tnr.style.display=(S.addType==='transfer')?'':'none';
   document.getElementById('cat-section').style.display='none';
   renderAddItems(); calcTotal();
 }));
@@ -1523,6 +1537,21 @@ function renderAddItems() {
       const it = S.addItems[+inp.dataset.i];
       it[inp.dataset.f] = inp.value;
       calcTotal();
+    });
+  });
+  // 綁定分類按鈕
+  list.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      S.selItemForCat = +btn.dataset.i;
+      document.getElementById('cat-section').style.display = '';
+      renderModalCats(S.addType);
+    });
+  });
+  // 綁定刪除按鈕（支出多項）
+  list.querySelectorAll('.item-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      S.addItems.splice(+btn.dataset.i, 1);
+      renderAddItems(); calcTotal();
     });
   });
 }
@@ -1624,6 +1653,9 @@ document.getElementById('add-confirm').addEventListener('click', async function(
     }
 
     let note=document.getElementById('f-note').value;
+    if(S.addType==='transfer'){
+      note=document.getElementById('f-transfer-note')?.value||'';
+    }
     if(S.addType==='adjust' && !note){
       note=`調整後 NT$ ${fmt(total)}`;
     }
@@ -1843,6 +1875,7 @@ function renderSubList(){
     back.innerHTML='<span class="sn" style="display:flex;align-items:center;gap:8px">'
       +'◀ 返回'
       +'<span style="padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;color:#fff;background:'+parentColor+'">'+parentName+'</span>'
+      +' 類別'
       +'</span>';
     back.addEventListener('click',()=>{
       S.subCatPath.pop();
@@ -1970,7 +2003,7 @@ function renderSubList(){
           // 支出進入子層：隱藏 tabs，標題改父類別名
           S.subCatPath.push(it);
           document.getElementById('sub-cat-tabs').style.display='none';
-          document.getElementById('sub-title').textContent=it.name;
+          document.getElementById('sub-title').textContent=it.name+' （分類）';
           renderSubList();
         });
         const editBtn=row.querySelector('.editbtn');
