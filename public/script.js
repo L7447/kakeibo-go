@@ -2352,6 +2352,11 @@ async function doReset(){
   if(!ok) return;
   try{
     const res=await api('/api/reset',{method:'POST'});
+    // ↓ 加這四行
+    localStorage.removeItem(ADV_KEYS['piggy']);
+    localStorage.removeItem(ADV_KEYS['budget']);
+    localStorage.removeItem(ADV_KEYS['recurring']);
+    localStorage.removeItem(ADV_KEYS['debt']);   // ← 這行是負債    
     toast('重置成功，已重置為「 初始狀態 」', 4000); // 先顯示 toast
     await loadCfg();
     await renderHome();
@@ -2499,6 +2504,7 @@ async function doClearRecords(){
     localStorage.removeItem(ADV_KEYS['piggy']);      // 存錢筒
     localStorage.removeItem(ADV_KEYS['budget']);     // 預算
     localStorage.removeItem(ADV_KEYS['recurring']);  // 固定支出/收入
+    localStorage.removeItem(ADV_KEYS['debt']);       // 負債
     // 4️⃣ 重新載入設定（會從後端取得更新後的帳戶）
     await loadCfg();
     // 5️⃣ 重新渲染首頁（帳戶餘額會變為 0）
