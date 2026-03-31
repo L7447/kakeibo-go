@@ -211,7 +211,14 @@
         <label>時間</label>
         <input type="time" class="finp" id="f-time-vis">
       </div>
-    </div>    
+    </div>
+    <!-- 轉帳備註（僅轉帳時顯示，置於日期時間下方）-->
+    <div id="transfer-note-row" style="display:none;margin-bottom:14px;">
+      <div class="fg">
+        <label>備註</label>
+        <input type="text" class="finp" id="f-transfer-note" placeholder="選填">
+      </div>
+    </div>
     <!-- 帳戶（支出/收入/調整 standalone，轉帳/存錢筒隱藏）-->
     <div id="standalone-acc" style="margin-bottom:14px;display:none">
       <div class="fg">
@@ -227,12 +234,6 @@
       </div>
     </div>
 
-    <div id="transfer-note-row" style="display:none; margin-top:10px;">
-      <div class="fg">
-        <label>轉帳備註</label>
-        <input type="text" class="finp" id="f-transfer-note" placeholder="例如：生活費">
-      </div>
-    </div>
     <!-- 備註（存錢筒專用，在最下方）-->
     <div id="piggy-note-row" style="margin-bottom:14px;display:none">
       <div class="fg">
