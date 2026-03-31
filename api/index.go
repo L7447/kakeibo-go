@@ -944,9 +944,16 @@ func handleIcons(w http.ResponseWriter, r *http.Request) {
 func handleIconCategories(w http.ResponseWriter, r *http.Request) {
 	// 直接使用固定列表，永遠穩定
 	defaults := []string{
-		"餐食、飲料",
+		"食",
+		"衣",
+		"住",
+		"行",
 		"生活支出",
-		"交通",
+		"學",
+		"娛樂",
+		"3C產品",
+		"醫療",
+		"其他",
 		"收入",
 		"帳戶",
 		"轉帳",
