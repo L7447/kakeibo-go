@@ -60,14 +60,14 @@ var defaultSettings = map[string]interface{}{
 		"expense": []interface{}{
 			map[string]interface{}{"id": "food", "name": "食", "color": "#FF5F6D"},
 			map[string]interface{}{"id": "clothing", "name": "衣", "color": "#7B5EA7"},
-			map[string]interface{}{"id": "housing", "name": "住", "color": "#FFD166"},
+			map[string]interface{}{"id": "housing", "name": "住", "color": "#F15BB5"},
 			map[string]interface{}{"id": "transport", "name": "行", "color": "#FF9A5C"},
 			map[string]interface{}{"id": "shopping", "name": "生活支出", "color": "#FFD166"},
-			map[string]interface{}{"id": "entertainment", "name": "學", "color": "#4CC9F0"},
+			map[string]interface{}{"id": "entertainment", "name": "學", "color": "#F97316"},
 			map[string]interface{}{"id": "entertainment", "name": "娛樂", "color": "#4CC9F0"},
 			map[string]interface{}{"id": "education", "name": "3C產品", "color": "#4895EF"},
 			map[string]interface{}{"id": "health", "name": "醫療", "color": "#06D6A0"},
-			map[string]interface{}{"id": "other", "name": "其他", "color": "#8B909A"},
+			map[string]interface{}{"id": "other", "name": "其他", "color": "#A78BFA"},
 		},
 		"income": []interface{}{
 			map[string]interface{}{"id": "salary", "name": "薪水", "color": "#06D6A0", "icon": "/icon/收入/薪水.png"},
