@@ -158,8 +158,8 @@ async function ensureBuiltinIcons(){
 }
 
 // 【需求 2】圖示選擇新視窗
-// 圖示選擇（含分類 tab）
-const ICON_CATS=['餐食、飲料','生活支出','交通','收入','帳戶','轉帳'];
+// 內建圖示選擇（含分類 tab）
+const ICON_CATS=['食','衣','住','行','生活支出','學','娛樂','3C產品','醫療','其他','收入','帳戶','轉帳'];
 let _iconCurCat=ICON_CATS[0]; // 預設選第一個分類
 function openIconPicker(type){
   const el=document.getElementById('icon-picker');
