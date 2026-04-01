@@ -879,12 +879,17 @@ var iconFiles = map[string][]string{
 		"食/消夜.png",
 		"食/飲料.png",
 		"食/麵包.png",
+		"食/油炸燒烤食物.png",
+		"食/點心零食.png",
+		"食/食材.png",
 		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/食/ 完全一樣）
 	},
 	"衣": {
-		"衣/衣服.png",
-		"衣/褲子.png",
+		"衣/剪髮.png",
+		"衣/衣類.png",
 		"衣/鞋子.png",
+		"衣/包包.png",
+		"衣/配件.png",
 		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/衣/ 完全一樣）
 	},
 	"住": {
@@ -902,7 +907,6 @@ var iconFiles = map[string][]string{
 	},
 	"生活支出": {
 		"生活支出/健保費.png",
-		"生活支出/剪髮.png",
 		"生活支出/手機通話費.png",
 		"生活支出/網路費.png",
 		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/生活支出/ 完全一樣）
@@ -912,20 +916,22 @@ var iconFiles = map[string][]string{
 		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/學/ 完全一樣）
 	},
 	"娛樂": {
-		"娛樂/電影.png",
 		"娛樂/遊戲.png",
 		"娛樂/旅遊.png",
+		"娛樂/演唱會.png",
+		"娛樂/音樂.png",
 		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/娛樂/ 完全一樣）
 	},
 	"3C產品": {
 		"3C產品/手機.png",
 		"3C產品/電腦.png",
-		"3C產品/平板.png",
 		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/3C產品/ 完全一樣）
 	},
 	"醫療": {
 		"醫療/醫療費.png",
-		"醫療/藥局.png",
+		"醫療/掛號費.png",
+		"醫療/醫療檢查費.png",
+		"醫療/藥費.png",
 		// ← 在這裡新增您的圖片檔名（檔名必須和 GitHub public/icon/醫療/ 完全一樣）
 	},
 	"其他": {
