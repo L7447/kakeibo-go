@@ -348,10 +348,10 @@ function switchAccTab(tab){
 
 /* ── 負債分類 ── */
 const DEBT_CATS=[
-  {id:'loan',      name:'貸款',     color:'#DC2626'},
-  {id:'installment',name:'分期',    color:'#7C3AED'},
-  {id:'borrow',     name:'借款',     color:'#0EA5E9'},
-  {id:'credit_card',name:'信用卡費', color:'#F59E0B'},
+  {id:'loan',      name:'貸款',     color:'#DC2626', expenseCatId:'other'},
+  {id:'installment',name:'分期付款',    color:'#7C3AED', expenseCatId:'other'},
+  {id:'borrow',     name:'借款',     color:'#0EA5E9', expenseCatId:'other'},
+  {id:'credit_card',name:'信用卡債', color:'#F59E0B', expenseCatId:'other'},
 ];
 function flatDebtCats(arr){
   return (arr||[]).reduce((a,c)=>{a.push(c);if(c.children)a=a.concat(flatDebtCats(c.children));return a;},[]);
@@ -516,7 +516,7 @@ function saveDebt(idx){
     item._id=debtId;
     // 找月還款對應的分類（使用支出的第一個分類）
     const expCats=flattenCats(S.cfg.categories?.expense||[]);
-    const catId=expCats[0]?.id||'';
+    const catId=findDebtCat(_debtCatSel).expenseCatId||'';
     recs.push({type:'expense',category:catId,amount:payment,
       startdate:todayStr(),time:'09:00',periodN:1,periodUnit:'month',
       note:(name||findDebtCat(_debtCatSel).name)+' 還款',
