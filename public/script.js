@@ -2864,35 +2864,6 @@ function saveBudget(){
   renderAdvBody(); toast('預算已儲存');
 }
 
-/* ─── 固定支出／收入 ─── */
-function renderRecurringList(el){
-  const items=advLoad('recurring');
-  if(!items.length){
-    el.innerHTML='<div class="empty-tip" style="padding:32px 0">尚無固定項目<br>按 ＋ 新增</div>';
-    return;
-  }
-  const cats=[...flattenCats(S.cfg.categories&&S.cfg.categories.expense||[]),...flattenCats(S.cfg.categories&&S.cfg.categories.income||[])];
-  el.innerHTML=items.map((r,i)=>{
-    const c=cats.find(x=>x.id===r.category)||{name:r.category||'',color:'#8B909A'};
-    const typeColor=r.type==='expense'?'var(--red)':'var(--acc)';
-    const sign=r.type==='expense'?'-':'+';
-    return '<div class="rpt-card" style="margin-bottom:10px;">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;">'
-      +'<div style="flex:1;min-width:0;">'
-      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
-      +(c.icon?'<img src="'+resolveIconUrl(c.icon)+'" style="width:24px;height:24px;border-radius:6px;object-fit:cover;">':'<span style="width:10px;height:10px;border-radius:50%;background:'+(c.color||'#8B909A')+';flex-shrink:0;display:inline-block;"></span>')
-      +'<span style="font-weight:600;font-size:14px;">'+c.name+'</span>'
-      +'<span style="font-size:11px;padding:1px 7px;border-radius:999px;background:'+(r.type==='expense'?'rgba(220,38,38,0.1)':'rgba(22,163,74,0.1)')+';color:'+typeColor+';">'+(r.type==='expense'?'支出':'收入')+'</span>'
-      +'</div>'
-      +'<div style="font-size:12px;color:var(--t3);">每月 '+r.day+' 日 '+r.time+(r.note?' · '+r.note:'')+'</div>'
-      +'</div>'
-      +'<div style="display:flex;align-items:center;gap:8px;">'
-      +'<span style="font-family:var(--mono);font-weight:700;color:'+typeColor+';">'+sign+''+fmt(r.amount)+'</span>'
-      +'<button onclick="deleteRecurring('+i+')" style="width:28px;height:28px;border-radius:50%;background:var(--red-d);color:var(--red);border:none;font-size:12px;cursor:pointer;">✕</button>'
-      +'</div></div></div>';
-  }).join('');
-}
-
 let _recCatSel='', _recType='expense', _recCatPath=[];
 
 // 渲染類別選擇格（分層，依類型）
@@ -3115,7 +3086,7 @@ async function checkRecurring(){
   }
   if(changed){ advSave('recurring',items); await renderHome(); toast('固定項目已自動記帳',3000); }
 }
-
+/* ─── 固定支出／收入 ─── */
 function renderRecurringList(el){
   const items=advLoad('recurring');
   if(!items.length){
