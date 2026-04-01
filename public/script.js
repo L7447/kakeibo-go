@@ -2927,6 +2927,84 @@ function renderRecCatGrid(){
   });
 }
 
+function editRecurring(i){
+  const items = advLoad('recurring');
+  const r = items[i];
+  if(!r) return;
+  // 複用新增表單，填入現有資料
+  _recCatSel = r.category||''; 
+  _recType = r.type||'expense'; 
+  _recCatPath = [];
+  const body = document.getElementById('adv-body');
+  body.innerHTML = '<div style="padding:8px 0">'
+    +'<button onclick="renderAdvBody()" style="display:flex;align-items:center;gap:4px;background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;margin-bottom:12px;">◀ 返回列表</button>'
+    +'<div class="fg"><label>類型</label>'
+    +'<div class="type-tabs" style="margin-bottom:0">'
+    +'<button class="type-tab'+(r.type==='expense'?' on expense':'')+'" id="rec-t-exp">支出</button>'
+    +'<button class="type-tab'+(r.type==='income'?' on income':'')+'" id="rec-t-inc">收入</button></div></div>'
+    +'<div class="fg"><label>類別</label>'
+    +'<div id="rec-cat-grid" style="display:flex;flex-wrap:wrap;gap:6px;"></div></div>'
+    +'<div class="fg"><label>金額</label>'
+    +'<input type="number" class="finp" id="rec-amount" value="'+(r.amount||'')+'" placeholder="0" inputmode="decimal"></div>'
+    +'<div class="fg"><label>開始日期與時間</label>'
+    +'<div style="display:flex;gap:8px;">'
+    +'<input type="date" class="finp" id="rec-startdate" value="'+(r.startdate||'')+'" style="flex:1">'
+    +'<input type="time" class="finp" id="rec-time" value="'+(r.time||'')+'" style="flex:1"></div></div>'
+    +'<div class="fg"><label>重複週期</label>'
+    +'<div style="display:flex;gap:8px;align-items:center;">'
+    +'<span style="font-size:13px;color:var(--t2);">每</span>'
+    +'<input type="number" class="finp" id="rec-period-n" value="'+(r.periodN||1)+'" min="1" inputmode="numeric" style="width:70px;">'
+    +'<select class="fsel" id="rec-period-unit" style="flex:1">'
+    +'<option value="day"'+(r.periodUnit==='day'?' selected':'')+'>天</option>'
+    +'<option value="week"'+(r.periodUnit==='week'?' selected':'')+'>週</option>'
+    +'<option value="month"'+((!r.periodUnit||r.periodUnit==='month')?' selected':'')+'>月</option>'
+    +'<option value="year"'+(r.periodUnit==='year'?' selected':'')+'>年</option>'
+    +'</select></div></div>'
+    +'<div class="fg"><label>備註（選填）</label>'
+    +'<input type="text" class="finp" id="rec-note" value="'+(r.note||'')+'" placeholder="選填"></div>'
+    +'<div class="fg"><label>截止日期（選填）</label>'
+    +'<input type="date" class="finp" id="rec-enddate" value="'+(r.endDate||'')+'"></div>'
+    +'<div class="acc-btns" style="margin-top:16px;">'
+    +'<button class="acc-btn" onclick="renderAdvBody()">取消</button>'
+    +'<button class="acc-btn ok" onclick="saveEditRecurring('+i+')">儲存</button>'
+    +'</div></div>';
+  renderRecCatGrid();
+  document.getElementById('rec-t-exp').addEventListener('click',function(){
+    _recType='expense'; _recCatSel=''; _recCatPath=[];
+    document.getElementById('rec-t-exp').className='type-tab on expense';
+    document.getElementById('rec-t-inc').className='type-tab';
+    renderRecCatGrid();
+  });
+  document.getElementById('rec-t-inc').addEventListener('click',function(){
+    _recType='income'; _recCatSel=''; _recCatPath=[];
+    document.getElementById('rec-t-exp').className='type-tab';
+    document.getElementById('rec-t-inc').className='type-tab on income';
+    renderRecCatGrid();
+  });
+}
+
+function saveEditRecurring(i){
+  const items = advLoad('recurring');
+  if(!_recCatSel){ toast('請選擇類別'); return; }
+  const amount = parseFloat(document.getElementById('rec-amount').value)||0;
+  if(!amount){ toast('請輸入金額'); return; }
+  items[i] = {
+    ...items[i],
+    type: _recType,
+    category: _recCatSel,
+    amount,
+    startdate: document.getElementById('rec-startdate').value || todayStr(),
+    time: document.getElementById('rec-time').value || '00:00',
+    periodN: parseInt(document.getElementById('rec-period-n').value)||1,
+    periodUnit: document.getElementById('rec-period-unit').value || 'month',
+    note: document.getElementById('rec-note').value.trim(),
+    endDate: document.getElementById('rec-enddate').value||'',
+  };
+  advSave('recurring', items);
+  renderAdvBody();
+  toast('已儲存');
+}
+
 function openRecurringForm(){
   _recCatSel=''; _recType='expense'; _recCatPath=[];
   const body=document.getElementById('adv-body');
@@ -3065,6 +3143,7 @@ function renderRecurringList(el){
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;">'
       +'<span style="font-family:var(--mono);font-weight:700;color:'+typeColor+';">'+sign+''+fmt(r.amount)+'</span>'
+      +'<button onclick="editRecurring('+i+')" style="width:28px;height:28px;border-radius:50%;background:var(--sf2);color:var(--t2);border:1px solid var(--border);font-size:13px;cursor:pointer;">✎</button>'
       +'<button onclick="deleteRecurring('+i+')" class="row-del-btn">✕</button>'
       +'</div></div></div>';
   }).join('');
