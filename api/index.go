@@ -3,7 +3,6 @@ package handler
 
 import (
 	"context"
-	"embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,9 +17,6 @@ import (
 )
 
 // ── 嵌入 public/icon 資料夾（因為 index.go 在 api/ 資料夾）──────────────────
-//
-// go:embed ../public/icon
-var iconFS embed.FS
 
 // ── Redis client（全域，冷啟動時初始化）────────────────────────────────────
 var (
@@ -61,11 +57,11 @@ var defaultSettings = map[string]interface{}{
 			map[string]interface{}{"id": "food", "name": "食", "color": "#FF5F6D"},
 			map[string]interface{}{"id": "clothing", "name": "衣", "color": "#7B5EA7"},
 			map[string]interface{}{"id": "housing", "name": "住", "color": "#F15BB5"},
-            map[string]interface{}{"id": "transport", "name": "行", "color": "#FF9A5C", "children":[
-                {"id":"gasoline","name":"加油費","color":"#FF9A5C","icon":"/icon/行/加油費.png"},
-                {"id":"maintain","name":"保養","color":"#06D6A0","icon":"/icon/行/保養.png"},
-                {"id":"repair","name":"維修","color":"#FF5F6D","icon":"/icon/行/維修.png"},
-            ]},
+			map[string]interface{}{"id": "transport", "name": "行", "color": "#FF9A5C", "children": []interface{}{
+				map[string]interface{}{"id": "gas", "name": "加油費", "color": "#FF9A5C", "icon": "/icon/行/加油費.png"},
+				map[string]interface{}{"id": "maintain", "name": "保養", "color": "#06D6A0", "icon": "/icon/行/保養.png"},
+				map[string]interface{}{"id": "repair", "name": "維修", "color": "#FF5F6D", "icon": "/icon/行/維修.png"},
+			}},
 			map[string]interface{}{"id": "Life", "name": "生活支出", "color": "#FFD166"},
 			map[string]interface{}{"id": "study", "name": "學", "color": "#F97316"},
 			map[string]interface{}{"id": "entertainment", "name": "娛樂", "color": "#4CC9F0"},
