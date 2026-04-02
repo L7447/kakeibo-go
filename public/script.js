@@ -360,7 +360,7 @@ function findDebtCat(id){
   return flatDebtCats(DEBT_CATS).find(c=>c.id===id)||{id,name:id,color:'#8B909A'};
 }
 
-/* ── 負債列表（已移除總額欄，將新增按鈕移至頂部） ── */
+/* ── 負債列表（已新增「開始日期與時間」顯示） ── */
 function renderDebtSection(){
   const el = document.getElementById('acc-debt-section');
   const items = advLoad('debt');
@@ -368,7 +368,7 @@ function renderDebtSection(){
   
   let html = '';
 
-  // 原「負債總額欄」位置 → 現在放「＋新增負債」按鈕
+  // 新增負債按鈕（置於頂部）
   html += '<button onclick="openDebtForm()" style="width:100%;padding:14px;margin-bottom:20px;background:var(--sf2);border:1px dashed var(--border);border-radius:var(--rs);color:var(--t2);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:.15s;">＋ 新增負債</button>';
 
   if(!items.length){
@@ -381,6 +381,13 @@ function renderDebtSection(){
       const pct = amt>0?Math.min(100,Math.round(paid/amt*100)):0;
       const remain = Math.max(0,amt-paid);
       const barColor = pct>=100?'var(--acc)':pct>=70?'#FFD166':'var(--red)';
+
+      // 【本次新增】顯示開始日期與時間
+      let startInfo = '';
+      if(d.startDate){
+        startInfo = `<div style="font-size:11px;color:var(--t3);margin-top:4px;">開始：${d.startDate} ${d.startTime||'00:00'}</div>`;
+      }
+
       return '<div class="debt-card">'
         +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
         +'<div style="display:flex;align-items:center;gap:8px;">'
@@ -403,6 +410,7 @@ function renderDebtSection(){
         +(d.fixedDay?'<span>每月 '+d.fixedDay+' 日還款</span>':'')
         +'</div>'
         +(d.endDate?'<div style="font-size:11px;color:var(--t3);margin-top:4px;">截止：'+d.endDate+'</div>':'')
+        +startInfo  // ← 新增的開始日期與時間顯示
         +(d.note?'<div style="font-size:11px;color:var(--t3);margin-top:2px;">備註：'+escHtml(d.note)+'</div>':'')
         +'</div>';
     }).join('');
@@ -442,25 +450,46 @@ function renderDebtCatGrid(parent){
   });
 }
 
-/* ── 開啟負債表單 ── */
+/* ── 開啟負債表單（已新增「開始日期」與「時間」兩個欄位） ── */
 function openDebtForm(idx){
   const items=advLoad('debt');
   const d=(idx!==undefined&&idx!==null)?items[idx]:null;
   _debtCatSel=d?d.category:'';
   _debtCatParent=null;
   const el=document.getElementById('acc-debt-section');
+  
   el.innerHTML='<div style="padding:4px 0">'
     +'<button onclick="renderDebtSection()" style="background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;margin-bottom:12px;">◀ 返回列表</button>'
+    
+    // 名稱
     +'<div class="fg" style="margin-bottom:10px;"><label>名稱／描述</label>'
     +'<input type="text" class="finp" id="debt-name" value="'+(d?escHtml(d.name||''):'')+'" placeholder="例：國泰房貸、信用卡欠款"></div>'
+    
+    // 分類
     +'<div class="fg" style="margin-bottom:10px;"><label>分類</label>'
     +'<div id="debt-cat-grid" style="display:flex;flex-wrap:wrap;gap:6px;"></div></div>'
+    
+    // 【本次新增】開始日期與時間
+    +'<div style="display:flex;gap:8px;margin-bottom:10px;">'
+    +'<div class="fg" style="flex:1;"><label>開始日期</label>'
+    +'<input type="date" class="finp" id="debt-startdate" value="'+(d?d.startDate||'':'')+'"></div>'
+    +'<div class="fg" style="flex:1;"><label>時間</label>'
+    +'<input type="time" class="finp" id="debt-starttime" value="'+(d?d.startTime||'':'')+'"></div>'
+    +'</div>'
+    
+    // 負債總額
     +'<div class="fg" style="margin-bottom:10px;"><label>負債總額</label>'
     +'<input type="number" class="finp" id="debt-amount" value="'+(d?d.amount:'')+'" placeholder="0" inputmode="decimal"></div>'
+    
+    // 月還款金額
     +'<div class="fg" style="margin-bottom:10px;"><label>月還款金額</label>'
     +'<input type="number" class="finp" id="debt-payment" value="'+(d?d.payment:'')+'" placeholder="0" inputmode="decimal"></div>'
+    
+    // 已還金額
     +'<div class="fg" style="margin-bottom:10px;"><label>已還金額（選填）</label>'
     +'<input type="number" class="finp" id="debt-paid" value="'+(d?d.paid||0:0)+'" placeholder="0" inputmode="decimal"></div>'
+    
+    // 固定還款日期
     +'<div class="fg" style="margin-bottom:10px;">'
     +'<div style="display:flex;align-items:center;gap:8px;">'
     +'<input type="checkbox" id="debt-fixed-chk" style="width:18px;height:18px;cursor:pointer;" '+(d&&d.fixedDay?'checked':'')+' onchange="toggleDebtFixedDay()">'
@@ -471,16 +500,23 @@ function openDebtForm(idx){
     +'<input type="number" class="finp" id="debt-fixed-day" value="'+(d?d.fixedDay||'':'')+'" placeholder="15" min="1" max="31" inputmode="numeric" style="width:80px;">'
     +'<span style="font-size:13px;color:var(--t2);">日</span>'
     +'</div></div>'
+    
+    // 截止日期
     +'<div class="fg" style="margin-bottom:10px;"><label>截止日期（選填）</label>'
     +'<input type="date" class="finp" id="debt-end-date" value="'+(d?d.endDate||'':'')+'">'
     +'</div>'
+    
+    // 備註
     +'<div class="fg" style="margin-bottom:16px;"><label>備註（選填）</label>'
     +'<input type="text" class="finp" id="debt-note" value="'+(d?escHtml(d.note||''):'')+'" placeholder="選填"></div>'
+    
+    // 儲存按鈕
     +'<div class="acc-btns">'
     +'<button class="acc-btn" onclick="renderDebtSection()">取消</button>'
-    +'<button class="acc-btn ok" onclick="saveDebt('+(idx!==undefined&&idx!==null?idx:'null')+')">儲存</button>'
+    +'<button class="acc-btn ok" onclick="saveDebt('+ (idx!==undefined&&idx!==null?idx:-1) +')">儲存</button>'
     +'</div></div>';
-  renderDebtCatGrid(null);
+
+  renderDebtCatGrid();
 }
 
 function toggleDebtFixedDay(){
@@ -488,53 +524,43 @@ function toggleDebtFixedDay(){
   document.getElementById('debt-fixed-day-row').style.display=chk.checked?'flex':'none';
 }
 
+/* ── 儲存負債 ── 新增或修改都使用同一個函式 saveDebt(idx) ── */
+/* 參數 idx：>=0 表示修改該索引的負債；-1 表示新增一筆負債 */
 function saveDebt(idx){
-  const name=document.getElementById('debt-name').value.trim();
-  const amount=parseFloat(document.getElementById('debt-amount').value)||0;
-  const payment=parseFloat(document.getElementById('debt-payment').value)||0;
-  const paid=parseFloat(document.getElementById('debt-paid').value)||0;
-  const fixedChk=document.getElementById('debt-fixed-chk').checked;
-  const fixedDay=fixedChk?(parseInt(document.getElementById('debt-fixed-day').value)||null):null;
-  const endDate=document.getElementById('debt-end-date').value||'';
-  const note=document.getElementById('debt-note').value.trim();
-  if(!_debtCatSel){toast('請選擇分類');return;}
-  if(!amount){toast('請輸入負債總額');return;}
-  const items=advLoad('debt');
-  const isNew=(idx===null||idx===undefined);
-  const oldItem=isNew?null:items[idx];
-  const item={name:name||findDebtCat(_debtCatSel).name,category:_debtCatSel,amount,payment,paid,fixedDay,endDate,note};
-  // 若有固定還款日期，同步至固定支出
-  if(fixedDay){
-    const recs=advLoad('recurring');
-    // 移除舊的關聯固定支出
-    if(!isNew && oldItem&&oldItem.fixedDay){
-      const oldIdx=recs.findIndex(r=>r._debtId===oldItem._id);
-      if(oldIdx>=0) recs.splice(oldIdx,1);
-    }
-    // 產生唯一 id
-    const debtId='debt_'+(Date.now());
-    item._id=debtId;
-    // 找月還款對應的分類（使用支出的第一個分類）
-    const expCats=flattenCats(S.cfg.categories?.expense||[]);
-    const catId=findDebtCat(_debtCatSel).expenseCatId||'';
-    recs.push({type:'expense',category:catId,amount:payment,
-      startdate:todayStr(),time:'09:00',periodN:1,periodUnit:'month',
-      note:(name||findDebtCat(_debtCatSel).name)+' 還款',
-      day:fixedDay,_debtId:debtId,endDate});
-    advSave('recurring',recs);
-    toast('已同步至固定支出 ✓', 2500);
-  } else if(!isNew&&oldItem&&oldItem.fixedDay&&oldItem._id){
-    // 取消固定還款：移除固定支出
-    const recs=advLoad('recurring');
-    const ri=recs.findIndex(r=>r._debtId===oldItem._id);
-    if(ri>=0){recs.splice(ri,1);advSave('recurring',recs);}
+  const items = advLoad('debt');
+  const isEdit = (idx >= 0);   // idx >= 0 代表修改模式
+  
+  const name = document.getElementById('debt-name').value.trim();
+  if(!name){ toast('請輸入名稱'); return; }
+  
+  const amount = parseFloat(document.getElementById('debt-amount').value)||0;
+  if(!amount){ toast('請輸入負債總額'); return; }
+  
+  const newDebt = {
+    name: name,
+    category: _debtCatSel,
+    amount: amount,
+    payment: parseFloat(document.getElementById('debt-payment').value)||0,
+    paid: parseFloat(document.getElementById('debt-paid').value)||0,
+    fixedDay: document.getElementById('debt-fixed-chk').checked ? parseInt(document.getElementById('debt-fixed-day').value)||15 : null,
+    endDate: document.getElementById('debt-end-date').value||'',
+    startDate: document.getElementById('debt-startdate').value||'',   // 新增的開始日期
+    startTime: document.getElementById('debt-starttime').value||'',   // 新增的開始時間
+    note: document.getElementById('debt-note').value.trim()
+  };
+  
+  if(isEdit){
+    // 修改模式：覆蓋原本的第 idx 筆
+    items[idx] = newDebt;
+    toast('已更新負債');
+  } else {
+    // 新增模式：直接 push 到陣列最後
+    items.push(newDebt);
+    toast('已新增負債');
   }
-  if(isNew) items.push(item);
-  else items[idx]={...oldItem,...item};
-  advSave('debt',items);
-  renderDebtSection();
-  renderAccounts();
-  toast('已儲存');
+  
+  advSave('debt', items);
+  renderDebtSection();   // 重新渲染負債列表
 }
 
 function deleteDebt(i){
