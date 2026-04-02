@@ -350,7 +350,7 @@ function switchAccTab(tab){
 const DEBT_CATS=[
   {id:'loan',      name:'貸款',     color:'#DC2626', expenseCatId:'other'},
   {id:'installment',name:'分期付款',    color:'#7C3AED', expenseCatId:'other'},
-  {id:'borrow',     name:'借款',     color:'#0EA5E9', expenseCatId:'other'},
+  {id:'borrow',     name:'借錢',     color:'#0EA5E9', expenseCatId:'other'},
   {id:'credit_card',name:'信用卡債', color:'#F59E0B', expenseCatId:'other'},
 ];
 function flatDebtCats(arr){
