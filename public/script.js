@@ -360,7 +360,7 @@ function findDebtCat(id){
   return flatDebtCats(DEBT_CATS).find(c=>c.id===id)||{id,name:id,color:'#8B909A'};
 }
 
-/* ── 負債列表（已新增「開始日期與時間」顯示） ── */
+/* ── 負債列表（已新增「帳戶」顯示 + 開始日期與時間） ── */
 function renderDebtSection(){
   const el = document.getElementById('acc-debt-section');
   const items = advLoad('debt');
@@ -368,7 +368,7 @@ function renderDebtSection(){
   
   let html = '';
 
-  // 新增負債按鈕（置於頂部）
+  // 新增負債按鈕
   html += '<button onclick="openDebtForm()" style="width:100%;padding:14px;margin-bottom:20px;background:var(--sf2);border:1px dashed var(--border);border-radius:var(--rs);color:var(--t2);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:.15s;">＋ 新增負債</button>';
 
   if(!items.length){
@@ -382,7 +382,13 @@ function renderDebtSection(){
       const remain = Math.max(0,amt-paid);
       const barColor = pct>=100?'var(--acc)':pct>=70?'#FFD166':'var(--red)';
 
-      // 【本次新增】顯示開始日期與時間
+      // 【本次新增】顯示已選帳戶名稱
+      const accName = d.account 
+        ? (S.cfg.accounts||[]).find(a=>a.id===d.account)?.name || '未設定' 
+        : '未設定';
+      const accountInfo = `<div style="font-size:11px;color:var(--t3);margin-top:4px;">帳戶：${accName}</div>`;
+
+      // 開始日期與時間
       let startInfo = '';
       if(d.startDate){
         startInfo = `<div style="font-size:11px;color:var(--t3);margin-top:4px;">開始：${d.startDate} ${d.startTime||'00:00'}</div>`;
@@ -410,7 +416,8 @@ function renderDebtSection(){
         +(d.fixedDay?'<span>每月 '+d.fixedDay+' 日還款</span>':'')
         +'</div>'
         +(d.endDate?'<div style="font-size:11px;color:var(--t3);margin-top:4px;">截止：'+d.endDate+'</div>':'')
-        +startInfo  // ← 新增的開始日期與時間顯示
+        +startInfo
+        +accountInfo   // ← 新增的「帳戶」顯示
         +(d.note?'<div style="font-size:11px;color:var(--t3);margin-top:2px;">備註：'+escHtml(d.note)+'</div>':'')
         +'</div>';
     }).join('');
@@ -450,7 +457,7 @@ function renderDebtCatGrid(parent){
   });
 }
 
-/* ── 開啟負債表單（已新增「開始日期」與「時間」兩個欄位） ── */
+/* ── 開啟負債表單（已新增「帳戶」下拉選單） ── */
 function openDebtForm(idx){
   const items=advLoad('debt');
   const d=(idx!==undefined&&idx!==null)?items[idx]:null;
@@ -458,18 +465,24 @@ function openDebtForm(idx){
   _debtCatParent=null;
   const el=document.getElementById('acc-debt-section');
   
+  // 產生帳戶選項
+  const accOpts = (S.cfg.accounts || []).map(a => 
+    `<option value="${a.id}" ${d&&d.account===a.id?'selected':''}>${a.name}</option>`
+  ).join('');
+  
   el.innerHTML='<div style="padding:4px 0">'
     +'<button onclick="renderDebtSection()" style="background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;margin-bottom:12px;">◀ 返回列表</button>'
     
-    // 名稱
     +'<div class="fg" style="margin-bottom:10px;"><label>名稱／描述</label>'
     +'<input type="text" class="finp" id="debt-name" value="'+(d?escHtml(d.name||''):'')+'" placeholder="例：國泰房貸、信用卡欠款"></div>'
     
-    // 分類
     +'<div class="fg" style="margin-bottom:10px;"><label>分類</label>'
     +'<div id="debt-cat-grid" style="display:flex;flex-wrap:wrap;gap:6px;"></div></div>'
     
-    // 【本次新增】開始日期與時間
+    // 【本次新增】帳戶欄位
+    +'<div class="fg" style="margin-bottom:10px;"><label>帳戶</label>'
+    +'<select class="fsel" id="debt-account">'+accOpts+'</select></div>'
+    
     +'<div style="display:flex;gap:8px;margin-bottom:10px;">'
     +'<div class="fg" style="flex:1;"><label>開始日期</label>'
     +'<input type="date" class="finp" id="debt-startdate" value="'+(d?d.startDate||'':'')+'"></div>'
@@ -477,19 +490,15 @@ function openDebtForm(idx){
     +'<input type="time" class="finp" id="debt-starttime" value="'+(d?d.startTime||'':'')+'"></div>'
     +'</div>'
     
-    // 負債總額
     +'<div class="fg" style="margin-bottom:10px;"><label>負債總額</label>'
     +'<input type="number" class="finp" id="debt-amount" value="'+(d?d.amount:'')+'" placeholder="0" inputmode="decimal"></div>'
     
-    // 月還款金額
     +'<div class="fg" style="margin-bottom:10px;"><label>月還款金額</label>'
     +'<input type="number" class="finp" id="debt-payment" value="'+(d?d.payment:'')+'" placeholder="0" inputmode="decimal"></div>'
     
-    // 已還金額
     +'<div class="fg" style="margin-bottom:10px;"><label>已還金額（選填）</label>'
     +'<input type="number" class="finp" id="debt-paid" value="'+(d?d.paid||0:0)+'" placeholder="0" inputmode="decimal"></div>'
     
-    // 固定還款日期
     +'<div class="fg" style="margin-bottom:10px;">'
     +'<div style="display:flex;align-items:center;gap:8px;">'
     +'<input type="checkbox" id="debt-fixed-chk" style="width:18px;height:18px;cursor:pointer;" '+(d&&d.fixedDay?'checked':'')+' onchange="toggleDebtFixedDay()">'
@@ -501,34 +510,24 @@ function openDebtForm(idx){
     +'<span style="font-size:13px;color:var(--t2);">日</span>'
     +'</div></div>'
     
-    // 截止日期
     +'<div class="fg" style="margin-bottom:10px;"><label>截止日期（選填）</label>'
-    +'<input type="date" class="finp" id="debt-end-date" value="'+(d?d.endDate||'':'')+'">'
-    +'</div>'
+    +'<input type="date" class="finp" id="debt-end-date" value="'+(d?d.endDate||'':'')+'"></div>'
     
-    // 備註
     +'<div class="fg" style="margin-bottom:16px;"><label>備註（選填）</label>'
     +'<input type="text" class="finp" id="debt-note" value="'+(d?escHtml(d.note||''):'')+'" placeholder="選填"></div>'
     
-    // 儲存按鈕
     +'<div class="acc-btns">'
     +'<button class="acc-btn" onclick="renderDebtSection()">取消</button>'
-    +'<button class="acc-btn ok" onclick="saveDebt('+ (idx!==undefined&&idx!==null?idx:-1) +')">儲存</button>'
+    +'<button class="acc-btn ok" onclick="saveDebt('+(idx!==undefined&&idx!==null?idx:-1)+')">儲存</button>'
     +'</div></div>';
 
   renderDebtCatGrid();
 }
 
-function toggleDebtFixedDay(){
-  const chk=document.getElementById('debt-fixed-chk');
-  document.getElementById('debt-fixed-day-row').style.display=chk.checked?'flex':'none';
-}
-
-/* ── 儲存負債 ── 新增或修改都使用同一個函式 saveDebt(idx) ── */
-/* 參數 idx：>=0 表示修改該索引的負債；-1 表示新增一筆負債 */
+/* ── 儲存負債（已儲存帳戶欄位 + 自動新增固定支出） ── */
 function saveDebt(idx){
   const items = advLoad('debt');
-  const isEdit = (idx >= 0);   // idx >= 0 代表修改模式
+  const isEdit = (idx >= 0);
   
   const name = document.getElementById('debt-name').value.trim();
   if(!name){ toast('請輸入名稱'); return; }
@@ -539,6 +538,7 @@ function saveDebt(idx){
   const newDebt = {
     name: name,
     category: _debtCatSel,
+    account: document.getElementById('debt-account').value || '',   // 【本次新增】帳戶
     amount: amount,
     payment: parseFloat(document.getElementById('debt-payment').value)||0,
     paid: parseFloat(document.getElementById('debt-paid').value)||0,
@@ -550,23 +550,26 @@ function saveDebt(idx){
   };
   
   if(isEdit){
-    // 修改模式：覆蓋原本的第 idx 筆
     items[idx] = newDebt;
     toast('已更新負債');
   } else {
-    // 新增模式：直接 push 到陣列最後
     items.push(newDebt);
     toast('已新增負債');
   }
   
   advSave('debt', items);
   
-  // 【本次修正重點】如果勾選固定還款日期 → 自動新增至固定支出
+  // 如果勾選固定還款，自動新增至 recurring（已帶入帳戶）
   if(newDebt.fixedDay){
     autoAddDebtToRecurring(newDebt);
   }
   
-  renderDebtSection();   // 重新渲染負債列表
+  renderDebtSection();
+}
+
+function toggleDebtFixedDay(){
+  const chk=document.getElementById('debt-fixed-chk');
+  document.getElementById('debt-fixed-day-row').style.display=chk.checked?'flex':'none';
 }
 
 /* ── 自動把負債的「固定還款」轉成 recurring 固定支出項目 ── */
@@ -3023,15 +3026,18 @@ function editRecurring(i){
   });
 }
 
+/* ── 修改固定項目（已儲存帳戶欄位） ── */
 function saveEditRecurring(i){
   const items = advLoad('recurring');
   if(!_recCatSel){ toast('請選擇類別'); return; }
   const amount = parseFloat(document.getElementById('rec-amount').value)||0;
   if(!amount){ toast('請輸入金額'); return; }
+  
   items[i] = {
     ...items[i],
     type: _recType,
     category: _recCatSel,
+    account: document.getElementById('rec-account').value || '',   // 【本次新增】
     amount,
     startdate: document.getElementById('rec-startdate').value || todayStr(),
     time: document.getElementById('rec-time').value || '00:00',
@@ -3045,40 +3051,57 @@ function saveEditRecurring(i){
   toast('已儲存');
 }
 
+/* ── 開啟固定項目表單（已新增「帳戶」下拉選單） ── */
 function openRecurringForm(){
   _recCatSel=''; _recType='expense'; _recCatPath=[];
   const body=document.getElementById('adv-body');
+  
+  // 產生帳戶選項
+  const accOpts = (S.cfg.accounts || []).map(a => 
+    `<option value="${a.id}">${a.name}</option>`
+  ).join('');
+  
   body.innerHTML='<div style="padding:8px 0">'
     +'<div class="fg"><label>類型</label>'
     +'<div class="type-tabs" style="margin-bottom:0">'
     +'<button class="type-tab on expense" id="rec-t-exp">支出</button>'
     +'<button class="type-tab" id="rec-t-inc">收入</button></div></div>'
+    
     +'<div class="fg"><label>類別</label>'
     +'<div id="rec-cat-grid" style="display:flex;flex-wrap:wrap;gap:6px;"></div></div>'
+    
+    // 【本次新增】帳戶欄位
+    +'<div class="fg" style="margin-bottom:10px;"><label>帳戶</label>'
+    +'<select class="fsel" id="rec-account">'+accOpts+'</select></div>'
+    
     +'<div class="fg"><label>金額</label>'
     +'<input type="number" class="finp" id="rec-amount" placeholder="0" inputmode="decimal"></div>'
+    
     +'<div class="fg"><label>開始日期與時間</label>'
     +'<div style="display:flex;gap:8px;">'
     +'<input type="date" class="finp" id="rec-startdate" style="flex:1">'
     +'<input type="time" class="finp" id="rec-time" style="flex:1"></div></div>'
+    
     +'<div class="fg"><label>重複週期</label>'
     +'<div style="display:flex;gap:8px;align-items:center;">'
     +'<span style="font-size:13px;color:var(--t2);">每</span>'
     +'<input type="number" class="finp" id="rec-period-n" value="1" min="1" inputmode="numeric" style="width:70px;">'
     +'<select class="fsel" id="rec-period-unit" style="flex:1">'
-    +'<option value="day">天</option>'
-    +'<option value="week">週</option>'
-    +'<option value="month" selected>月</option>'
-    +'<option value="year">年</option>'
+    +'<option value="day">天</option><option value="week">週</option>'
+    +'<option value="month" selected>月</option><option value="year">年</option>'
     +'</select></div></div>'
+    
     +'<div class="fg"><label>備註（選填）</label>'
     +'<input type="text" class="finp" id="rec-note" placeholder="選填"></div>'
+    
     +'<div class="fg"><label>截止日期（選填）</label>'
     +'<input type="date" class="finp" id="rec-enddate"></div>'
+    
     +'<div class="acc-btns" style="margin-top:16px;">'
     +'<button class="acc-btn" onclick="renderAdvBody()">取消</button>'
     +'<button class="acc-btn ok" onclick="saveRecurring()">新增</button>'
     +'</div></div>';
+  
   renderRecCatGrid();
   // 類型切換
   document.getElementById('rec-t-exp').addEventListener('click',function(){
@@ -3095,9 +3118,11 @@ function openRecurringForm(){
   });
 }
 
+/* ── 儲存固定項目（已儲存帳戶欄位） ── */
 function saveRecurring(){
   const type=_recType;
   const category=_recCatSel;
+  const account = document.getElementById('rec-account').value || '';   // 【本次新增】
   const amount=parseFloat(document.getElementById('rec-amount').value)||0;
   const startdate=document.getElementById('rec-startdate').value||todayStr();
   const time=document.getElementById('rec-time').value||'00:00';
@@ -3105,12 +3130,15 @@ function saveRecurring(){
   const periodUnit=document.getElementById('rec-period-unit').value||'month';
   const note=document.getElementById('rec-note').value.trim();
   const endDate=document.getElementById('rec-enddate')?.value||'';
+  
   if(!category){toast('請選擇類別');return;}
   if(!amount){toast('請輸入金額');return;}
+  
   const items=advLoad('recurring');
-  items.push({type,category,amount,startdate,time,periodN,periodUnit,note,endDate,lastRun:''});
-  advSave('recurring',items); renderAdvBody(); toast('已新增固定項目');
-  // 立即檢查是否需要執行
+  items.push({type, category, account, amount, startdate, time, periodN, periodUnit, note, endDate, lastRun:''});   // 已加入 account
+  advSave('recurring',items); 
+  renderAdvBody(); 
+  toast('已新增固定項目');
   checkRecurring();
 }
 
@@ -3128,7 +3156,7 @@ function nextRecurringDate(item){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
-// 開啟 App 時自動檢查固定項目，到期就建立記錄
+/* ── 開啟 App 時自動檢查固定項目，到期就建立記錄並更新帳戶餘額 ── */
 async function checkRecurring(){
   const items=advLoad('recurring');
   const today=todayStr();
@@ -3137,25 +3165,31 @@ async function checkRecurring(){
     const r=items[i];
     let due=r.lastRun?nextRecurringDate(r):r.startdate;
     while(due<=today){
-      // 建立記錄
       try{
-        const cats=S.cfg?[...flattenCats(S.cfg.categories?.expense||[]),...flattenCats(S.cfg.categories?.income||[])]:[];
-        const catObj=cats.find(function(c){return c.id===r.category;})||{id:r.category};
         const payload={
-          type:r.type, amount:r.amount, date:due, time:r.time||'00:00',
-          note:r.note||(r.periodN===1?'固定':'每'+r.periodN+(r.periodUnit==='day'?'天':r.periodUnit==='week'?'週':r.periodUnit==='month'?'月':'年')),
-          category:r.category, account:'',
-          items:[{category:r.category,qty:1,price:r.amount,note:r.note||''}]
+          type: r.type,
+          amount: r.amount,
+          date: due,
+          time: r.time||'00:00',
+          note: r.note || '',
+          category: r.category,
+          account: r.account || '',   // 【本次修正重點】帶入帳戶，讓後端 applyBalance 自動加減
+          items: [{category: r.category, qty:1, price: r.amount, note: r.note||''}]
         };
         await api('/api/records',{method:'POST',body:JSON.stringify(payload)});
-        items[i].lastRun=due; changed=true;
+        items[i].lastRun=due; 
+        changed=true;
         due=nextRecurringDate(items[i]);
       }catch(e){ break; }
     }
   }
-  if(changed){ advSave('recurring',items); await renderHome(); toast('固定項目已自動記帳',3000); }
+  if(changed){ 
+    advSave('recurring',items); 
+    await renderHome(); 
+    toast('固定項目已自動記帳（已更新帳戶餘額）',3000); 
+  }
 }
-/* ─── 固定支出／收入 ─── */
+/* ── 固定項目列表（已新增「帳戶」顯示） ── */
 function renderRecurringList(el){
   const items=advLoad('recurring');
   if(!items.length){
@@ -3164,11 +3198,19 @@ function renderRecurringList(el){
   }
   const cats=[...flattenCats(S.cfg.categories&&S.cfg.categories.expense||[]),...flattenCats(S.cfg.categories&&S.cfg.categories.income||[])];
   const unitLabel={day:'天',week:'週',month:'月',year:'年'};
+  
   el.innerHTML=items.map(function(r,i){
     const c=cats.find(function(x){return x.id===r.category;})||{name:r.category||'',color:'#8B909A'};
     const typeColor=r.type==='expense'?'var(--red)':'var(--acc)';
     const sign=r.type==='expense'?'-':'+';
     const periodStr='每'+( r.periodN&&r.periodN>1?r.periodN:'')+(unitLabel[r.periodUnit||'month']||'月');
+    
+    // 【本次新增】顯示已選帳戶名稱
+    const accName = r.account 
+      ? (S.cfg.accounts||[]).find(a=>a.id===r.account)?.name || '未設定' 
+      : '未設定';
+    const accountInfo = `<div style="font-size:11px;color:var(--t3);margin-top:2px;">帳戶：${accName}</div>`;
+    
     const nextDue=nextRecurringDate(r);
     return '<div class="rpt-card" style="margin-bottom:10px;">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;">'
@@ -3180,6 +3222,7 @@ function renderRecurringList(el){
       +'</div>'
       +'<div style="font-size:12px;color:var(--t3);">下次：'+nextDue+' '+r.time+(r.note?' · '+r.note:'')+'</div>'
       +(r.endDate?'<div style="font-size:11px;color:var(--t3);margin-top:2px;">截止：'+r.endDate+'</div>':'')
+      +accountInfo   // ← 新增的「帳戶」顯示
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;">'
       +'<span style="font-family:var(--mono);font-weight:700;color:'+typeColor+';">'+sign+''+fmt(r.amount)+'</span>'
