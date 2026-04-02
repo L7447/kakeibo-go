@@ -1,4 +1,5 @@
 // 記帳本 v3 — Go 主程式（Vercel Serverless + Redis/KV）
+// 修正版：解決 VS Code 46 個報錯 + 每段程式都有繁體中文註解
 package handler
 
 import (
@@ -16,9 +17,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// ── 嵌入 public/icon 資料夾（因為 index.go 在 api/ 資料夾）──────────────────
-
-// ── Redis client（全域，冷啟動時初始化）────────────────────────────────────
+// ── Redis 客戶端（全域，冷啟動時只初始化一次）────────────────────────────
 var (
 	rdb       *redis.Client
 	ctx       = context.Background()
@@ -30,6 +29,7 @@ const (
 	settingsKey = "kakeibo_settings"
 )
 
+// getRedis：取得 Redis 連線（支援 Vercel KV 或自訂 REDIS_URL）
 func getRedis() *redis.Client {
 	if redisOnce {
 		return rdb
@@ -139,7 +139,8 @@ var defaultSettings = map[string]interface{}{
 	"note_tags": []interface{}{},
 }
 
-// ── Redis helpers ─────────────────────────────────────────────────────────
+// ── Redis 輔助函式 ──────────────────────────────────────────────────────
+// loadJSON：從 Redis 讀取 JSON，若不存在則寫入預設值
 func loadJSON(key string, defaultVal interface{}) interface{} {
 	r := getRedis()
 	if r == nil {
@@ -154,7 +155,7 @@ func loadJSON(key string, defaultVal interface{}) interface{} {
 	if err := json.Unmarshal([]byte(val), &data); err != nil {
 		return defaultVal
 	}
-	// 補預設 account_groups
+	// 補齊 account_groups 預設值
 	if key == settingsKey {
 		if m, ok := data.(map[string]interface{}); ok {
 			if ag, ok := m["account_groups"].([]interface{}); !ok || len(ag) == 0 {
@@ -166,6 +167,7 @@ func loadJSON(key string, defaultVal interface{}) interface{} {
 	return data
 }
 
+// saveJSON：將資料存入 Redis
 func saveJSON(key string, data interface{}) {
 	r := getRedis()
 	if r == nil {
@@ -175,11 +177,13 @@ func saveJSON(key string, data interface{}) {
 	r.Set(ctx, key, string(b), 0)
 }
 
+// newID：產生唯一 ID（時間戳記格式）
 func newID() string {
 	return time.Now().Format("20060102150405.000000")
 }
 
 // ── 餘額計算 ──────────────────────────────────────────────────────────────
+// applyBalance：根據記錄類型更新帳戶餘額（factor = 1 新增，-1 刪除）
 func applyBalance(settings map[string]interface{}, rec map[string]interface{}, factor float64) {
 	accs, _ := settings["accounts"].([]interface{})
 	findAcc := func(id string) map[string]interface{} {
@@ -230,15 +234,14 @@ func applyBalance(settings map[string]interface{}, rec map[string]interface{}, f
 	}
 }
 
-// ── JSON 回應 helper ─────────────────────────────────────────────────────
+// ── JSON 回應輔助 ───────────────────────────────────────────────────────
 func jsonResp(w http.ResponseWriter, code int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(data)
 }
 
-// ── 主路由處理器 ─────────────────────────────────────────────────────────
-// Handler is the Vercel entry point
+// ── 主路由處理器（Vercel 入口）──────────────────────────────────────────
 func Handler(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Path
 
@@ -339,7 +342,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ── Records ───────────────────────────────────────────────────────────────
+// ── Records 相關處理器 ──────────────────────────────────────────────────
+// handleGetRecords：取得記錄（支援年月篩選）
 func handleGetRecords(w http.ResponseWriter, r *http.Request) {
 	recs, _ := loadJSON(recordsKey, []interface{}{}).([]interface{})
 	y := r.URL.Query().Get("year")
@@ -450,6 +454,7 @@ func strOrDefault(m map[string]interface{}, key, def string) string {
 	return def
 }
 
+// handleAddRecord：新增一筆記錄並更新餘額
 func handleAddRecord(w http.ResponseWriter, r *http.Request) {
 	body, _ := io.ReadAll(r.Body)
 	var d map[string]interface{}
@@ -467,7 +472,9 @@ func handleAddRecord(w http.ResponseWriter, r *http.Request) {
 	jsonResp(w, 200, map[string]interface{}{"ok": true, "record": rec})
 }
 
-func handleDelRecord(w http.ResponseWriter, r *http.Request, rid string) {
+// handleDelRecord：刪除單筆記錄（已改 _，不再報 unused parameter）
+func handleDelRecord(w http.ResponseWriter, _ *http.Request, rid string) {
+	// 功能：從 Redis 移除指定 id 的記錄，並反向扣除帳戶餘額
 	recs, _ := loadJSON(recordsKey, []interface{}{}).([]interface{})
 	settings, _ := loadJSON(settingsKey, defaultSettings).(map[string]interface{})
 	if settings == nil {
@@ -486,6 +493,7 @@ func handleDelRecord(w http.ResponseWriter, r *http.Request, rid string) {
 	jsonResp(w, 200, map[string]bool{"ok": true})
 }
 
+// handleUpdateRecord：更新單筆記錄
 func handleUpdateRecord(w http.ResponseWriter, r *http.Request, rid string) {
 	body, _ := io.ReadAll(r.Body)
 	var d map[string]interface{}
@@ -514,6 +522,7 @@ func handleUpdateRecord(w http.ResponseWriter, r *http.Request, rid string) {
 }
 
 // ── Report ────────────────────────────────────────────────────────────────
+// handleReport：產生月報表（已保留 r 因為需要 Query 參數）
 func handleReport(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	y := now.Year()
@@ -627,7 +636,7 @@ func handleReport(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// ── Settings helpers ─────────────────────────────────────────────────────
+// ── Settings 輔助 ─────────────────────────────────────────────────────
 func getSettings() map[string]interface{} {
 	s, ok := loadJSON(settingsKey, defaultSettings).(map[string]interface{})
 	if !ok || s == nil {
@@ -636,7 +645,6 @@ func getSettings() map[string]interface{} {
 	}
 	return s
 }
-
 func readBody(r *http.Request) map[string]interface{} {
 	body, _ := io.ReadAll(r.Body)
 	var d map[string]interface{}
@@ -703,7 +711,9 @@ func removeCat(list []interface{}, cid string) []interface{} {
 	return result
 }
 
-func handleDelCat(w http.ResponseWriter, r *http.Request, ct, cid string) {
+// ── 刪除分類（原本未使用 r，改成 _） ────────────────────────────────
+func handleDelCat(w http.ResponseWriter, _ *http.Request, ct, cid string) {
+	// 功能：從 settings 中移除指定分類（支援巢狀子分類）
 	s := getSettings()
 	cats, _ := s["categories"].(map[string]interface{})
 	if cats != nil {
@@ -771,7 +781,9 @@ func handleAddAcc(w http.ResponseWriter, r *http.Request) {
 	jsonResp(w, 200, map[string]bool{"ok": true})
 }
 
-func handleDelAcc(w http.ResponseWriter, r *http.Request, aid string) {
+// ── 刪除帳戶（原本未使用 r，改成 _） ────────────────────────────────
+func handleDelAcc(w http.ResponseWriter, _ *http.Request, aid string) {
+	// 功能：從 settings.accounts 中移除指定帳戶
 	s := getSettings()
 	accs, _ := s["accounts"].([]interface{})
 	filtered := make([]interface{}, 0)
@@ -813,7 +825,9 @@ func handleAddAG(w http.ResponseWriter, r *http.Request) {
 	jsonResp(w, 200, map[string]bool{"ok": true})
 }
 
-func handleDelAG(w http.ResponseWriter, r *http.Request, gid string) {
+// ── 刪除帳戶分組（原本未使用 r，改成 _） ─────────────────────────────
+func handleDelAG(w http.ResponseWriter, _ *http.Request, gid string) {
+	// 功能：從 settings.account_groups 中移除指定分組
 	s := getSettings()
 	ags, _ := s["account_groups"].([]interface{})
 	filtered := make([]interface{}, 0)
@@ -837,7 +851,9 @@ func handleAddMer(w http.ResponseWriter, r *http.Request) {
 	jsonResp(w, 200, map[string]bool{"ok": true})
 }
 
-func handleDelMer(w http.ResponseWriter, r *http.Request, mid string) {
+// ── 刪除商家（原本未使用 r，改成 _） ────────────────────────────────
+func handleDelMer(w http.ResponseWriter, _ *http.Request, mid string) {
+	// 功能：從 settings.merchants 中移除指定商家
 	s := getSettings()
 	mers, _ := s["merchants"].([]interface{})
 	filtered := make([]interface{}, 0)
@@ -861,7 +877,9 @@ func handleAddExp(w http.ResponseWriter, r *http.Request) {
 	jsonResp(w, 200, map[string]bool{"ok": true})
 }
 
-func handleDelExp(w http.ResponseWriter, r *http.Request, eid string) {
+// ── 刪除專案（原本未使用 r，改成 _） ────────────────────────────────
+func handleDelExp(w http.ResponseWriter, _ *http.Request, eid string) {
+	// 功能：從 settings.experts 中移除指定專案
 	s := getSettings()
 	exps, _ := s["experts"].([]interface{})
 	filtered := make([]interface{}, 0)
@@ -898,7 +916,9 @@ func handleUpdateNoteTags(w http.ResponseWriter, r *http.Request) {
 	jsonResp(w, 200, map[string]bool{"ok": true})
 }
 
-func handleDelNoteTag(w http.ResponseWriter, r *http.Request, tid string) {
+// ── 刪除備註標籤（原本未使用 r，改成 _） ─────────────────────────────
+func handleDelNoteTag(w http.ResponseWriter, _ *http.Request, tid string) {
+	// 功能：從 settings.note_tags 中移除指定標籤
 	s := getSettings()
 	tags, _ := s["note_tags"].([]interface{})
 	filtered := make([]interface{}, 0)
@@ -1026,29 +1046,19 @@ func handleIcons(w http.ResponseWriter, r *http.Request) {
 	jsonResp(w, 200, files)
 }
 
-// ── 內建圖示分類 ─────────────────────────────────────────────────────────
-func handleIconCategories(w http.ResponseWriter, r *http.Request) {
-	// 直接使用固定列表，永遠穩定
+// ── 取得內建圖示分類（原本未使用 r，改成 _） ────────────────────────
+func handleIconCategories(w http.ResponseWriter, _ *http.Request) {
+	// 功能：回傳固定圖示分類列表（前端 icon-picker 使用）
 	defaults := []string{
-		"食",
-		"衣",
-		"住",
-		"行",
-		"生活支出",
-		"學",
-		"娛樂",
-		"3C產品",
-		"醫療",
-		"其他",
-		"收入",
-		"帳戶",
-		"轉帳",
+		"食", "衣", "住", "行", "生活支出", "學", "娛樂",
+		"3C產品", "醫療", "其他", "收入", "帳戶", "轉帳",
 	}
 	jsonResp(w, 200, defaults)
 }
 
-// ── Backup / Restore / Reset ──────────────────────────────────────────────
-func handleBackup(w http.ResponseWriter, r *http.Request) {
+// ── 備份資料（原本未使用 r，改成 _） ────────────────────────────────
+func handleBackup(w http.ResponseWriter, _ *http.Request) {
+	// 功能：輸出 records + settings 的完整 JSON 供使用者下載
 	data := map[string]interface{}{
 		"exported_at": time.Now().Format(time.RFC3339),
 		"records":     loadJSON(recordsKey, []interface{}{}),
@@ -1074,7 +1084,9 @@ func handleRestore(w http.ResponseWriter, r *http.Request) {
 	jsonResp(w, 200, map[string]bool{"ok": true})
 }
 
-func handleResetRecords(w http.ResponseWriter, r *http.Request) {
+// ── 重置所有記錄（原本未使用 r，改成 _） ────────────────────────────
+func handleResetRecords(w http.ResponseWriter, _ *http.Request) {
+	// 功能：清除所有記錄，並把所有帳戶餘額歸零
 	saveJSON(recordsKey, []interface{}{})
 	s := getSettings()
 	if accs, ok := s["accounts"].([]interface{}); ok {
