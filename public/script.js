@@ -544,8 +544,8 @@ function saveDebt(idx){
     paid: parseFloat(document.getElementById('debt-paid').value)||0,
     fixedDay: document.getElementById('debt-fixed-chk').checked ? parseInt(document.getElementById('debt-fixed-day').value)||15 : null,
     endDate: document.getElementById('debt-end-date').value||'',
-    startDate: document.getElementById('debt-startdate').value||'',   // 新增的開始日期
-    startTime: document.getElementById('debt-starttime').value||'',   // 新增的開始時間
+    startDate: document.getElementById('debt-startdate').value||'',
+    startTime: document.getElementById('debt-starttime').value||'',
     note: document.getElementById('debt-note').value.trim()
   };
   
@@ -560,7 +560,50 @@ function saveDebt(idx){
   }
   
   advSave('debt', items);
+  
+  // 【本次修正重點】如果勾選固定還款日期 → 自動新增至固定支出
+  if(newDebt.fixedDay){
+    autoAddDebtToRecurring(newDebt);
+  }
+  
   renderDebtSection();   // 重新渲染負債列表
+}
+
+/* ── 自動把負債的「固定還款」轉成 recurring 固定支出項目 ── */
+/* 避免每次儲存都重複新增，會先檢查是否已存在同名 recurring */
+function autoAddDebtToRecurring(debt){
+  let recurring = advLoad('recurring');
+  
+  // 檢查是否已經有這筆負債的固定還款（用 name 判斷）
+  const existingIndex = recurring.findIndex(r => 
+    r.note && r.note.includes(debt.name) && r.periodUnit === 'month'
+  );
+  
+  const recurringItem = {
+    type: 'expense',
+    category: debt.category || 'other',
+    amount: debt.payment || 0,
+    startdate: debt.startDate || todayStr(),
+    time: debt.startTime || '00:00',
+    periodN: 1,
+    periodUnit: 'month',
+    note: '固定還款：' + debt.name,
+    endDate: debt.endDate || '',
+    lastRun: ''   // 讓 checkRecurring 自動判斷是否需要執行
+  };
+  
+  if(existingIndex >= 0){
+    // 已存在 → 更新
+    recurring[existingIndex] = recurringItem;
+  } else {
+    // 不存在 → 新增
+    recurring.push(recurringItem);
+  }
+  
+  advSave('recurring', recurring);
+  
+  // 立即檢查一次，讓今天或未來日期的固定項目立刻出現在首頁
+  checkRecurring();
 }
 
 function deleteDebt(i){
