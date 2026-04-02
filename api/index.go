@@ -54,20 +54,68 @@ func getRedis() *redis.Client {
 var defaultSettings = map[string]interface{}{
 	"categories": map[string]interface{}{
 		"expense": []interface{}{
-			map[string]interface{}{"id": "food", "name": "食", "color": "#FF5F6D"},
-			map[string]interface{}{"id": "clothing", "name": "衣", "color": "#7B5EA7"},
-			map[string]interface{}{"id": "housing", "name": "住", "color": "#F15BB5"},
-			map[string]interface{}{"id": "transport", "name": "行", "color": "#FF9A5C", "children": []interface{}{
-				map[string]interface{}{"id": "gas", "name": "加油費", "color": "#FF9A5C", "icon": "/icon/行/加油費.png"},
-				map[string]interface{}{"id": "maintain", "name": "保養", "color": "#06D6A0", "icon": "/icon/行/保養.png"},
+			map[string]interface{}{"id": "food", "name": "食", "color": "#FF5F6D", "children": []interface{}{
+				map[string]interface{}{"id": "breakfast", "name": "早餐", "color": "#FF0000", "icon": "/icon/食/早餐.png"},
+				map[string]interface{}{"id": "Lunch", "name": "午餐", "color": "#008000", "icon": "/icon/食/午餐.png"},
+				map[string]interface{}{"id": "dinner", "name": "晚餐", "color": "#0000FF", "icon": "/icon/食/晚餐.png"},
+				map[string]interface{}{"id": "night_snack", "name": "消夜", "color": "#FFD700", "icon": "/icon/食/消夜.png"},
+				map[string]interface{}{"id": "Snacks", "name": "點心零食", "color": "#800080", "icon": "/icon/食/點心零食.png"},
+				map[string]interface{}{"id": "Fried", "name": "油炸燒烤食物", "color": "#FF8C00", "icon": "/icon/食/油炸燒烤食物.png"},
+				map[string]interface{}{"id": "drinks", "name": "飲料", "color": "#FF69B4", "icon": "/icon/食/飲料.png"},
+				map[string]interface{}{"id": "Ingredients", "name": "食材", "color": "#8B4513", "icon": "/icon/食/食材.png"},
+			}},
+			map[string]interface{}{"id": "clothing", "name": "衣", "color": "#7B5EA7", "children": []interface{}{
+				map[string]interface{}{"id": "Haircut", "name": "剪髮", "color": "#FF0000", "icon": "/icon/衣/剪髮.png"},
+				map[string]interface{}{"id": "Clothing", "name": "衣類", "color": "#008000", "icon": "/icon/衣/衣類.png"},
+				map[string]interface{}{"id": "shoe", "name": "鞋子", "color": "#0000FF", "icon": "/icon/衣/鞋子.png"},
+				map[string]interface{}{"id": "Accessories", "name": "配件", "color": "#FFD700", "icon": "/icon/衣/配件.png"},
+				map[string]interface{}{"id": "bags", "name": "包包", "color": "#800080", "icon": "/icon/衣/包包.png"},
+			}},
+			map[string]interface{}{"id": "housing", "name": "住", "color": "#F15BB5", "children": []interface{}{
+				map[string]interface{}{"id": "rent", "name": "房租", "color": "#FF0000", "icon": "/icon/住/房租.png"},
+				map[string]interface{}{"id": "Water_bill", "name": "自來水費", "color": "#008000", "icon": "/icon/住/自來水費.png"},
+				map[string]interface{}{"id": "Electricity_bill", "name": "電費", "color": "#0000FF", "icon": "/icon/住/電費.png"},
+				map[string]interface{}{"id": "Gas_bill", "name": "瓦斯費", "color": "#FFD700", "icon": "/icon/住/瓦斯費.png"},
+			}},
+			map[string]interface{}{"id": "Transportation", "name": "行", "color": "#FF9A5C", "children": []interface{}{
+				map[string]interface{}{"id": "fuel_cost", "name": "加油費", "color": "#FF9A5C", "icon": "/icon/行/加油費.png"},
+				map[string]interface{}{"id": "maintainance", "name": "保養", "color": "#06D6A0", "icon": "/icon/行/保養.png"},
 				map[string]interface{}{"id": "repair", "name": "維修", "color": "#FF5F6D", "icon": "/icon/行/維修.png"},
 			}},
-			map[string]interface{}{"id": "Life", "name": "生活支出", "color": "#FFD166"},
-			map[string]interface{}{"id": "study", "name": "學", "color": "#F97316"},
-			map[string]interface{}{"id": "entertainment", "name": "娛樂", "color": "#4CC9F0"},
-			map[string]interface{}{"id": "Electronic", "name": "3C產品", "color": "#4895EF"},
-			map[string]interface{}{"id": "health", "name": "醫療", "color": "#06D6A0"},
-			map[string]interface{}{"id": "other", "name": "其他", "color": "#A78BFA"},
+			map[string]interface{}{"id": "Living_expenses", "name": "生活支出", "color": "#FFD166", "children": []interface{}{
+				map[string]interface{}{"id": "Mobile_phone_bill", "name": "手機通話費", "color": "#FF9A5C", "icon": "/icon/生活支出/手機通話費.png"},
+				map[string]interface{}{"id": "Internet_bill", "name": "網路費", "color": "#06D6A0", "icon": "/icon/生活支出/網路費.png"},
+				map[string]interface{}{"id": "Health_Insurance", "name": "健保費", "color": "#FF5F6D", "icon": "/icon/生活支出/健保費.png"},
+			}},
+			map[string]interface{}{"id": "study", "name": "學", "color": "#F97316", "children": []interface{}{
+				map[string]interface{}{"id": "School", "name": "學校", "color": "#FF0000", "icon": "/icon/學/學校.png"},
+			}},
+			map[string]interface{}{"id": "entertainment", "name": "娛樂", "color": "#4CC9F0", "children": []interface{}{
+				map[string]interface{}{"id": "game", "name": "遊戲", "color": "#FF0000", "icon": "/icon/娛樂/遊戲.png"},
+				map[string]interface{}{"id": "travel", "name": "旅遊", "color": "#008000", "icon": "/icon/娛樂/旅遊.png"},
+				map[string]interface{}{"id": "concert", "name": "演唱會", "color": "#0000FF", "icon": "/icon/娛樂/演唱會.png"},
+				map[string]interface{}{"id": "music", "name": "音樂", "color": "#FFD700", "icon": "/icon/娛樂/音樂.png"},
+			}},
+			map[string]interface{}{"id": "Electronic_products", "name": "3C產品", "color": "#4895EF", "children": []interface{}{
+				map[string]interface{}{"id": "cell_phone", "name": "手機", "color": "#FF0000", "icon": "/icon/3C產品/手機.png"},
+				map[string]interface{}{"id": "laptop", "name": "電腦", "color": "#008000", "icon": "/icon/3C產品/電腦.png"},
+			}},
+			map[string]interface{}{"id": "health", "name": "醫療", "color": "#06D6A0", "children": []interface{}{
+				map[string]interface{}{"id": "Registration_fee", "name": "掛號費", "color": "#FF0000", "icon": "/icon/醫療/掛號費.png"},
+				map[string]interface{}{"id": "Medical_fee", "name": "醫療費", "color": "#008000", "icon": "/icon/醫療/醫療費.png"},
+				map[string]interface{}{"id": "Medical_test", "name": "醫療檢查費", "color": "#0000FF", "icon": "/icon/醫療/醫療檢查費.png"},
+				map[string]interface{}{"id": "Medicine_Fee", "name": "藥費", "color": "#FFD700", "icon": "/icon/醫療/藥費.png"},
+			}},
+			map[string]interface{}{"id": "other", "name": "其他", "color": "#A78BFA", "children": []interface{}{
+				map[string]interface{}{"id": "loan", "name": "貸款", "color": "#FF0000", "icon": "/icon/其他/貸款.png"},
+				map[string]interface{}{"id": "Paying_taxes", "name": "繳稅", "color": "#008000", "icon": "/icon/其他/繳稅.png"},
+				map[string]interface{}{"id": "party", "name": "聚餐活動", "color": "#0000FF", "icon": "/icon/其他/聚餐活動.png"},
+				map[string]interface{}{"id": "Borrow_money", "name": "借錢", "color": "#FFD700", "icon": "/icon/其他/借錢.png"},
+				map[string]interface{}{"id": "Credit_card_debt", "name": "信用卡債", "color": "#800080", "icon": "/icon/其他/信用卡債.png"},
+				map[string]interface{}{"id": "Social_Gift_Giving", "name": "交際送禮", "color": "#FF8C00", "icon": "/icon/其他/交際送禮.png"},
+				map[string]interface{}{"id": "handling_fee", "name": "手續費", "color": "#FF69B4", "icon": "/icon/其他/手續費.png"},
+				map[string]interface{}{"id": "installment", "name": "分期付款", "color": "#8B4513", "icon": "/icon/其他/分期付款.png"},
+			}},
 		},
 		"income": []interface{}{
 			map[string]interface{}{"id": "salary", "name": "薪水", "color": "#06D6A0", "icon": "/icon/收入/薪水.png"},
