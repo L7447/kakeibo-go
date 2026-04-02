@@ -532,6 +532,9 @@ function saveDebt(idx){
   const name = document.getElementById('debt-name').value.trim();
   if(!name){ toast('請輸入名稱'); return; }
   
+  // 【修正 Bug 1】驗證分類是否已選擇，未選則提示使用者
+  if(!_debtCatSel){ toast('請選擇負債分類'); return; }
+
   const amount = parseFloat(document.getElementById('debt-amount').value)||0;
   if(!amount){ toast('請輸入負債總額'); return; }
   
@@ -564,7 +567,9 @@ function saveDebt(idx){
     autoAddDebtToRecurring(newDebt);
   }
   
+  // 【修正 Bug 3】儲存後同時更新負債列表與帳戶總覽（總負債、淨資產）
   renderDebtSection();
+  renderAccounts();
 }
 
 function toggleDebtFixedDay(){
@@ -592,6 +597,7 @@ function autoAddDebtToRecurring(debt){
     periodUnit: 'month',
     note: '固定還款：' + debt.name,
     endDate: debt.endDate || '',
+    account: debt.account || '',  // 【修正 Bug 2】將負債帳戶帶入固定支出，避免顯示「未設定」
     lastRun: ''   // 讓 checkRecurring 自動判斷是否需要執行
   };
   
