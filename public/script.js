@@ -351,8 +351,8 @@ function switchAccTab(tab){
 const DEBT_CATS=[
   {id:'loan',      name:'貸款',     color:'#DC2626', expenseCatId:'other'},
   {id:'installment',name:'分期付款',    color:'#7C3AED', expenseCatId:'other'},
-  {id:'borrow',     name:'借錢',     color:'#0EA5E9', expenseCatId:'other'},
-  {id:'credit_card',name:'信用卡債', color:'#F59E0B', expenseCatId:'other'},
+  {id:'Borrow_money',     name:'借錢',     color:'#0EA5E9', expenseCatId:'other'},
+  {id:'Credit_card_debt',name:'信用卡債', color:'#F59E0B', expenseCatId:'other'},
 ];
 function flatDebtCats(arr){
   return (arr||[]).reduce((a,c)=>{a.push(c);if(c.children)a=a.concat(flatDebtCats(c.children));return a;},[]);
