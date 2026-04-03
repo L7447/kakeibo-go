@@ -870,7 +870,10 @@ function renderDayRecs(ds){
     } else {
       // use item category if present
       const firstCatId = r.items && r.items[0] && r.items[0].category;
-      const catObj = cats.find(c=>c.id===firstCatId) || cats.find(c=>c.id===r.category) || {name:r.category,color:'#8B909A'};
+      // 【修正 Bug 2】找不到時補查 DEBT_CATS（負債固定還款的分類 ID 如 borrow/loan 不在一般分類裡）
+      const catObj = cats.find(c=>c.id===firstCatId) || cats.find(c=>c.id===r.category)
+        || flatDebtCats(DEBT_CATS).find(c=>c.id===firstCatId) || flatDebtCats(DEBT_CATS).find(c=>c.id===r.category)
+        || {name:r.category,color:'#8B909A'};
       catName=catObj.name;
       catColor=catObj.color;
       acc=(S.cfg.accounts||[]).find(a=>a.id===r.account)||{name:r.account};
@@ -3184,11 +3187,21 @@ function nextRecurringDate(item){
 async function checkRecurring(){
   const items=advLoad('recurring');
   const today=todayStr();
+  // 取得當前時間字串（HH:MM），用來判斷今天的項目是否已到觸發時間
+  const nowTime=(()=>{
+    const n=new Date();
+    return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  })();
   let changed=false;
+  let recurringChanged=false; // 【修正 Bug 4】記錄 recurring 陣列本身是否有被刪除
+  const toRemove=[]; // 【修正 Bug 4】要移除的已清償固定還款索引
+
   for(let i=0;i<items.length;i++){
     const r=items[i];
     let due=r.lastRun?nextRecurringDate(r):r.startdate;
     while(due<=today){
+      // 【修正 Bug 1】若到期日是今天，需再確認時間是否已到；未到則不執行
+      if(due===today && (r.time||'00:00') > nowTime) break;
       try{
         const payload={
           type: r.type,
@@ -3197,20 +3210,48 @@ async function checkRecurring(){
           time: r.time||'00:00',
           note: r.note || '',
           category: r.category,
-          account: r.account || '',   // 【本次修正重點】帶入帳戶，讓後端 applyBalance 自動加減
+          account: r.account || '',
           items: [{category: r.category, qty:1, price: r.amount, note: r.note||''}]
         };
         await api('/api/records',{method:'POST',body:JSON.stringify(payload)});
-        items[i].lastRun=due; 
+        items[i].lastRun=due;
         changed=true;
+
+        // 【修正 Bug 3】若這是固定還款記錄，自動累加 debt.paid
+        if(r.note && r.note.startsWith('固定還款：')){
+          const debtName = r.note.replace('固定還款：','').trim();
+          const debts = advLoad('debt');
+          const di = debts.findIndex(d=>d.name===debtName);
+          if(di>=0){
+            debts[di].paid = (parseFloat(debts[di].paid)||0) + (parseFloat(r.amount)||0);
+            // 【修正 Bug 4】若已全額清償，標記此 recurring 待刪除
+            if(debts[di].paid >= (parseFloat(debts[di].amount)||0)){
+              debts[di].paid = parseFloat(debts[di].amount); // 最多等於總額，不超出
+              toRemove.push(i);
+            }
+            advSave('debt', debts);
+          }
+        }
+
         due=nextRecurringDate(items[i]);
       }catch(e){ break; }
     }
   }
-  if(changed){ 
-    advSave('recurring',items); 
-    await renderHome(); 
-    toast('固定項目已自動記帳（已更新帳戶餘額）',3000); 
+
+  // 【修正 Bug 4】由後往前刪除已清償的固定還款項目，避免索引偏移
+  if(toRemove.length){
+    [...new Set(toRemove)].sort((a,b)=>b-a).forEach(idx=>items.splice(idx,1));
+    recurringChanged=true;
+  }
+
+  if(changed||recurringChanged){
+    advSave('recurring',items);
+    await renderHome();
+    if(changed) toast('固定項目已自動記帳（已更新帳戶餘額）',3000);
+  }
+  // 若有負債更新，同步更新帳戶頁
+  if(changed && document.getElementById('page-accounts').classList.contains('active')){
+    renderDebtSection(); renderAccounts();
   }
 }
 /* ── 固定項目列表（已新增「帳戶」顯示） ── */
