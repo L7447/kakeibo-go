@@ -494,3 +494,25 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .row-del-btn{width:32px;height:32px;border-radius:50%;background:var(--red-d);border:none;color:var(--red);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .row-confirm-yes{padding:3px 10px;border-radius:999px;background:var(--red);color:#fff;border:none;font-size:12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .row-confirm-no{padding:3px 10px;border-radius:999px;background:var(--sf2);color:var(--t2);border:1px solid var(--border);font-size:12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+/* ── 功能 > 帳戶設定 > 分組折疊 ────────────────── */
+/* 每個分組的外框容器 */
+.sub-grp{margin-bottom:10px}
+/* 分組標題列：可點擊折疊 */
+.sub-grp-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--sf2);border:1px solid var(--border);border-radius:var(--rs);cursor:pointer;font-size:14px;font-weight:600;color:var(--t1);user-select:none;-webkit-tap-highlight-color:transparent;transition:background .15s}
+.sub-grp-hdr:active{background:var(--sf)}
+/* 展開時，標題底部去掉圓角與下邊框，與 body 接合 */
+.sub-grp-hdr.open{border-radius:var(--rs) var(--rs) 0 0;border-bottom-color:transparent}
+/* 分組內容：預設折疊隱藏 */
+.sub-grp-body{display:none;border:1px solid var(--border);border-top:none;border-radius:0 0 var(--rs) var(--rs);overflow:hidden}
+/* 展開狀態 */
+.sub-grp-body.open{display:block}
+/* 箭頭符號：展開時旋轉 180° */
+.sg-arrow{font-size:11px;color:var(--t3);transition:transform .2s;display:inline-block}
+.sub-grp-hdr.open .sg-arrow{transform:rotate(180deg)}
+
+/* ── 負債卡片：已清償精美徽章 ────────────────────── */
+/* 已清償時整張卡片加上淡綠色背景 */
+.debt-card.cleared{background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.3)}
+/* 已清償徽章 */
+.debt-cleared-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);color:#16a34a;font-size:11px;font-weight:700;letter-spacing:.3px}
