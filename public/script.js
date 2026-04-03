@@ -242,7 +242,8 @@ function renderAccounts(){
   const posTotal = accs.reduce((s,a)=>s+Math.max(0,parseFloat(a.balance)||0),0);
   const negTotal = accs.reduce((s,a)=>s+Math.max(0,-(parseFloat(a.balance)||0)),0);
   const debtItems = advLoad('debt');
-  const debtTotal = debtItems.reduce((s,d)=>s+(parseFloat(d.amount)||0),0);
+  // 【修正 Bug 1】總負債應使用「剩餘未還金額」（總額 - 已還），而非原始負債總額
+  const debtTotal = debtItems.reduce((s,d)=>s+Math.max(0,(parseFloat(d.amount)||0)-(parseFloat(d.paid)||0)),0);
   const displayDebt = Math.max(negTotal, debtTotal);
   const globalTotal = posTotal - displayDebt;
 
@@ -394,30 +395,47 @@ function renderDebtSection(){
         startInfo = `<div style="font-size:11px;color:var(--t3);margin-top:4px;">開始：${d.startDate} ${d.startTime||'00:00'}</div>`;
       }
 
-      return '<div class="debt-card">'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
-        +'<div style="display:flex;align-items:center;gap:8px;">'
+      // 【修正 Bug 3】判斷是否已清償（已還金額 >= 負債總額）
+      const isCleared = (pct >= 100);
+
+      // 若剛完成清償且有綁定固定支出，自動移除對應的 recurring 項目
+      if(isCleared && d.fixedDay){
+        const recs = advLoad('recurring');
+        const ri = recs.findIndex(r => r.note && r.note.includes(d.name) && r.periodUnit === 'month');
+        if(ri >= 0){ recs.splice(ri,1); advSave('recurring',recs); }
+      }
+
+      // 已清償時顯示精美綠色徽章
+      const clearedBadge = isCleared
+        ? '<span class="debt-cleared-badge">✓ 已清償</span>'
+        : '';
+
+      return '<div class="debt-card'+(isCleared?' cleared':'')+'">'
+        +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">'
+        +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;">'
         +'<span style="width:10px;height:10px;border-radius:50%;background:'+cat.color+';flex-shrink:0;display:inline-block;"></span>'
-        +'<span style="font-weight:700;font-size:15px;">'+escHtml(d.name||cat.name)+'</span>'
+        +'<span style="font-weight:700;font-size:15px;'+(isCleared?'text-decoration:line-through;opacity:.55;':'')+'">'+escHtml(d.name||cat.name)+'</span>'
         +'<span style="font-size:10px;padding:2px 7px;border-radius:999px;background:rgba(220,38,38,0.1);color:var(--red);">'+cat.name+'</span>'
+        +clearedBadge
         +'</div>'
-        +'<div style="display:flex;gap:6px;" onclick="event.stopPropagation()">'
+        +'<div style="display:flex;gap:6px;flex-shrink:0;" onclick="event.stopPropagation()">'
         +'<button onclick="openDebtForm('+i+')" style="padding:4px 10px;border-radius:999px;background:var(--sf2);color:var(--t2);border:1px solid var(--border);font-size:12px;cursor:pointer;">✎</button>'
         +'<button onclick="deleteDebt('+i+')" class="row-del-btn" style="width:28px;height:28px;">✕</button>'
         +'</div></div>'
-        +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);margin-bottom:6px;">'
+        +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);margin-bottom:8px;">'
         +'<span>總額 <strong style="color:var(--red);font-family:var(--mono);">NT$ '+fmt(amt)+'</strong></span>'
         +'<span>月還款 <strong style="color:var(--t1);font-family:var(--mono);">NT$ '+fmt(d.payment||0)+'</strong></span>'
         +'</div>'
-        +'<div style="height:4px;background:var(--sf2);border-radius:2px;margin-bottom:6px;overflow:hidden;">'
-        +'<div style="width:'+pct+'%;height:100%;background:'+barColor+';border-radius:2px;"></div></div>'
+        // 【修正 Bug 2】進度條高度從 4px 增至 8px，加動畫，更易辨識
+        +'<div style="height:8px;background:var(--sf2);border-radius:4px;margin-bottom:8px;overflow:hidden;">'
+        +'<div style="width:'+pct+'%;height:100%;background:'+barColor+';border-radius:4px;transition:width .4s;"></div></div>'
         +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);">'
-        +'<span>已還 '+pct+'%'+(remain>0?' · 剩 NT$ '+fmt(remain):'　🎉 已清償')+'</span>'
-        +(d.fixedDay?'<span>每月 '+d.fixedDay+' 日還款</span>':'')
+        +'<span>已還 <strong style="font-family:var(--mono);color:var(--t2);">'+pct+'%</strong>'+(remain>0?' · 剩 <strong style="font-family:var(--mono);color:var(--red);">NT$ '+fmt(remain)+'</strong>':'')+'</span>'
+        +(d.fixedDay&&!isCleared?'<span>每月 '+d.fixedDay+' 日還款</span>':'')
         +'</div>'
         +(d.endDate?'<div style="font-size:11px;color:var(--t3);margin-top:4px;">截止：'+d.endDate+'</div>':'')
         +startInfo
-        +accountInfo   // ← 新增的「帳戶」顯示
+        +accountInfo
         +(d.note?'<div style="font-size:11px;color:var(--t3);margin-top:2px;">備註：'+escHtml(d.note)+'</div>':'')
         +'</div>';
     }).join('');
