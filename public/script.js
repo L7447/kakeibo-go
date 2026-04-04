@@ -351,8 +351,8 @@ function switchAccTab(tab){
 const DEBT_CATS=[
   {id:'loan',      name:'貸款',     color:'#DC2626', expenseCatId:'other'},
   {id:'installment',name:'分期付款',    color:'#7C3AED', expenseCatId:'other'},
-  {id:'Borrow_money',     name:'借錢',     color:'#0EA5E9', expenseCatId:'other'},
-  {id:'Credit_card_debt',name:'信用卡債', color:'#F59E0B', expenseCatId:'other'},
+  {id:'borrow',     name:'借錢',     color:'#0EA5E9', expenseCatId:'other'},
+  {id:'credit_card',name:'信用卡債', color:'#F59E0B', expenseCatId:'other'},
 ];
 function flatDebtCats(arr){
   return (arr||[]).reduce((a,c)=>{a.push(c);if(c.children)a=a.concat(flatDebtCats(c.children));return a;},[]);
@@ -543,7 +543,7 @@ function openDebtForm(idx){
 }
 
 /* ── 儲存負債（已儲存帳戶欄位 + 自動新增固定支出） ── */
-function saveDebt(idx){
+async function saveDebt(idx){
   const items = advLoad('debt');
   const isEdit = (idx >= 0);
   
@@ -582,7 +582,8 @@ function saveDebt(idx){
   
   // 如果勾選固定還款，自動新增至 recurring（已帶入帳戶）
   if(newDebt.fixedDay){
-    autoAddDebtToRecurring(newDebt);
+    // 【修正 Bug 1a】等待固定支出建立完畢，帳戶餘額才會更新
+    await autoAddDebtToRecurring(newDebt);
   }
   
   // 【修正 Bug 3】儲存後同時更新負債列表與帳戶總覽（總負債、淨資產）
@@ -597,7 +598,7 @@ function toggleDebtFixedDay(){
 
 /* ── 自動把負債的「固定還款」轉成 recurring 固定支出項目 ── */
 /* 避免每次儲存都重複新增，會先檢查是否已存在同名 recurring */
-function autoAddDebtToRecurring(debt){
+async function autoAddDebtToRecurring(debt){
   let recurring = advLoad('recurring');
   
   // 檢查是否已經有這筆負債的固定還款（用 name 判斷）
@@ -629,8 +630,8 @@ function autoAddDebtToRecurring(debt){
   
   advSave('recurring', recurring);
   
-  // 立即檢查一次，讓今天或未來日期的固定項目立刻出現在首頁
-  checkRecurring();
+  // 【修正 Bug 1b】await 等待 checkRecurring 完成，確保帳戶餘額更新後再重繪
+  await checkRecurring();
 }
 
 function deleteDebt(i){
@@ -1435,6 +1436,8 @@ function renderModalCats(type, parent){
         S.addItems[idx].categoryName=c.name;
         S.selItemForCat=null;
         renderAddItems();
+        // 【修正 Bug 3a】分類改變後立即刷新備註標籤
+        renderItemNoteTags(idx);
         document.getElementById('cat-section').style.display='none';
         return;
       }
@@ -1609,19 +1612,26 @@ function renderAddItems() {
           <input type="number" placeholder="0" value="${it.price || ''}" data-i="${i}" data-f="price" inputmode="decimal" style="width:100%; text-align:right; color:var(--acc); font-weight:bold">
         </div>`;
     } else {
-      // 支出模式：保留原本結構
+      // 支出模式：加入備註標籤區塊 + 金額標籤
       row.innerHTML = `
         <div style="flex:1.2; display:flex; flex-direction:column; gap:4px">
           <button class="cat-btn" data-i="${i}">${catName}</button>
           <input type="text" placeholder="備註" value="${it.note || ''}" data-i="${i}" data-f="note" class="finp-s">
+          <!-- 【修正 Bug 3a】備註標籤區，分類選完後由 renderItemNoteTags 填充 -->
+          <div id="item-note-tags-${i}" style="display:none;flex-wrap:wrap;gap:4px;margin-top:2px;"></div>
         </div>
         <span style="color:var(--t3)">×</span>
         <input type="number" value="${it.qty || 1}" data-i="${i}" data-f="qty" style="flex:0.6; text-align:center">
-        <span style="color:var(--t3)">@</span>
-        <input type="number" value="${it.price || ''}" data-i="${i}" data-f="price" style="flex:1.2; color:var(--acc)">
+        <!-- 【修正 Bug 3b】金額欄加上「金額」標籤，與收入頁一致 -->
+        <div style="flex:1.2; display:flex; flex-direction:column; gap:2px;">
+          <span style="font-size:11px;color:var(--t3);">金額</span>
+          <input type="number" value="${it.price || ''}" data-i="${i}" data-f="price" style="width:100%;color:var(--acc);">
+        </div>
         ${S.addItems.length > 1 ? `<button class="item-del" data-i="${i}">✕</button>` : ''}`;
     }
     list.appendChild(row);
+    // 【修正 Bug 3a】每次重繪後立即渲染備註標籤（依目前分類過濾）
+    if(S.addType === 'expense') renderItemNoteTags(i);
   });
 
   // 重新綁定所有 input 事件
@@ -3247,11 +3257,13 @@ async function checkRecurring(){
   if(changed||recurringChanged){
     advSave('recurring',items);
     await renderHome();
+    // 【修正 Bug 1c】重新載入帳戶餘額（後端已更新），再刷新帳戶頁
+    await loadCfg();
+    if(document.getElementById('page-accounts').classList.contains('active')){
+      renderDebtSection();
+      renderAccounts();
+    }
     if(changed) toast('固定項目已自動記帳（已更新帳戶餘額）',3000);
-  }
-  // 若有負債更新，同步更新帳戶頁
-  if(changed && document.getElementById('page-accounts').classList.contains('active')){
-    renderDebtSection(); renderAccounts();
   }
 }
 /* ── 固定項目列表（已新增「帳戶」顯示） ── */
@@ -3310,97 +3322,90 @@ function deleteRecurring(i){
 async function openDetail(recordId) {
   let records = await api('/api/records');
   const record = records.find(r => r.id === recordId);
-  if (!record) {
-    toast('找不到記錄');
-    return;
-  }
+  if (!record) { toast('找不到記錄'); return; }
 
   const detailBox = document.getElementById('detail-box');
   const body = document.getElementById('detail-body');
   const isPiggy = record.type === 'piggy';
 
-  // 標題處理
-  let titleText = '記錄資訊';
-  if (isPiggy) titleText = '存錢筒';
+  let titleText = isPiggy ? '存錢筒記錄' : '記錄資訊';
 
-  let mainHtml = '';
-  if (isPiggy) {
-    mainHtml = `
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <img src="/icon/存錢筒.png" width="36" height="36" style="object-fit:contain;flex-shrink:0;">
-          <span style="font-size:18px;font-weight:700;color:#F59E0B;">存錢筒</span>
-        </div>
-        <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:#F59E0B;">+${fmt(record.amount)}</div>
-      </div>`;
-  } else {
-    function flatCats(arr){ return (arr||[]).reduce((a,c)=>{a.push(c);if(c.children)a=a.concat(flatCats(c.children));return a;},[]);}
-    const allCats=[...flatCats(S.cfg.categories?.expense||[]),...flatCats(S.cfg.categories?.income||[]),...flatCats(S.cfg.categories?.transfer||[])];
-    const cat = allCats.find(c=>c.id===record.category) || {name:record.category||'未分類',color:'#8B909A'};
-    const iconHtml = cat.icon
-      ? `<img src="${resolveIconUrl(cat.icon)}" width="28" height="28" style="object-fit:cover;border-radius:6px;flex-shrink:0;">`
-      : `<div style="width:28px;height:28px;border-radius:6px;background:${cat.color};flex-shrink:0;"></div>`;
-    const amtColor = record.type==='expense'?'var(--red)':record.type==='income'?'var(--acc)':record.type==='transfer'?'var(--blue)':'#9B5DE5';
-    const amtSign  = record.type==='expense'?'-':record.type==='income'?'+':'⇄';
-    const itemDesc = (record.items||[]).length
-      ? record.items.map(it=>{
-          const c=allCats.find(x=>x.id===it.category)||{name:it.category||''};
-          const nm=c.name||it.category||'';
-          const note=it.note?`(${it.note})`:'';
-          if(record.type==='transfer') return `${nm}`;
-          if(record.type==='income'||record.type==='expense') return `<span class="tag" style="background:${c.color||'#8B909A'};color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;">${nm}</span>${note}(${it.qty||1})×(${fmt(it.price||0)})`;
-          return nm;
-        }).join(' ') : '';
-    mainHtml = `
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;gap:8px;">${iconHtml}<span style="font-size:18px;font-weight:700;">${cat.name}</span></div>
-        <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:${amtColor};">${amtSign}${fmt(record.amount)}</div>
-      </div>
-      ${itemDesc ? `<div style="background:var(--sf2);padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;line-height:1.8;">${itemDesc}</div>` : ''}
-    `;
-  }
+  // ── 分類查找（含 DEBT_CATS 補查）──
+  function flatCats(arr){ return (arr||[]).reduce((a,c)=>{a.push(c);if(c.children)a=a.concat(flatCats(c.children));return a;},[]);}
+  const allCats=[...flatCats(S.cfg.categories?.expense||[]),...flatCats(S.cfg.categories?.income||[]),...flatCats(S.cfg.categories?.transfer||[]),...flatDebtCats(DEBT_CATS)];
+  const cat = allCats.find(c=>c.id===record.category) || {name:record.category||'未分類',color:'#8B909A'};
 
-  // 其他資訊區
-  const accName = (S.cfg.accounts || []).find(a => a.id === record.account)?.name || '未設定';
-  const toAccName = (record.type==='transfer' && record.to_account) ? (S.cfg.accounts || []).find(a => a.id === record.to_account)?.name || '' : '';
+  // ── 主區塊：圖示 + 分類名 + 金額 ──
+  const amtColor = record.type==='expense'?'var(--red)':record.type==='income'?'var(--acc)':record.type==='transfer'?'var(--blue)':'#9B5DE5';
+  const amtSign  = record.type==='expense'?'-':record.type==='income'?'+':record.type==='transfer'?'⇄':'±';
+  // 【修正 Bug 4】圖示放大至 42px
+  const iconHtml = isPiggy
+    ? `<img src="/icon/存錢筒.png" width="42" height="42" style="object-fit:contain;flex-shrink:0;">`
+    : cat.icon
+      ? `<img src="${resolveIconUrl(cat.icon)}" width="42" height="42" style="object-fit:cover;border-radius:10px;flex-shrink:0;">`
+      : `<div style="width:42px;height:42px;border-radius:10px;background:${cat.color};flex-shrink:0;"></div>`;
+  const catLabel = isPiggy ? '存錢筒' : cat.name;
+  const catColor2 = isPiggy ? '#F59E0B' : amtColor;
+
+  // ── 品項列表（支出/收入）──
+  // 【修正 Bug 4】品項格式加 $ 符號；【修正 Bug 2】備註優先用 record.note，備援 items[0].note
+  const displayNote = record.note || (record.items?.[0]?.note && record.type!=='expense' && record.type!=='income' ? record.items[0].note : '') || '';
+  const itemRows = (record.items||[]).length && (record.type==='expense'||record.type==='income')
+    ? record.items.map(it=>{
+        const ic = allCats.find(x=>x.id===it.category)||{name:it.category||'',color:'#8B909A'};
+        const nm = ic.name||it.category||'';
+        // 【修正 Bug 4】格式：(標籤)(備註)(數量)×($ 金額)
+        const tagChip = nm ? `<span style="display:inline-block;padding:2px 9px;border-radius:999px;background:${ic.color||'#8B909A'};color:#fff;font-size:12px;font-weight:600;margin-right:4px;">${nm}</span>` : '';
+        const noteChip = it.note ? `<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:var(--sf2);border:1px solid var(--border);font-size:12px;color:var(--t2);margin-right:4px;">${it.note}</span>` : '';
+        const qtyPrice = `<span style="font-size:13px;color:var(--t2);">(${it.qty||1}) × <strong style="color:${amtColor};font-family:var(--mono);">$ ${fmt(it.price||0)}</strong></span>`;
+        return `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:6px 0;border-bottom:1px solid var(--border);">${tagChip}${noteChip}${qtyPrice}</div>`;
+      }).join('')
+    : '';
 
   body.innerHTML = `
-    ${mainHtml}
-    <div style="border-top:1px solid var(--border);padding-top:12px;">
-      <div class="detail-infobox">
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
-          <span style="color:var(--t3);">帳戶</span>
-          <span style="font-weight:500;">${accName}</span>
+    <!-- 主標題區 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:12px;">
+        ${iconHtml}
+        <!-- 【修正 Bug 4】分類名稱字體放大 -->
+        <div>
+          <div style="font-size:21px;font-weight:700;color:var(--t1);">${catLabel}</div>
+          <div style="font-size:12px;color:var(--t3);margin-top:2px;">${record.type==='expense'?'支出':record.type==='income'?'收入':record.type==='transfer'?'轉帳':record.type==='piggy'?'存錢筒':'調整'}</div>
         </div>
-        ${toAccName ? `
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
-          <span style="color:var(--t3);">轉入帳戶</span>
-          <span style="font-weight:500;">${toAccName}</span>
-        </div>` : ''}
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
-          <span style="color:var(--t3);">日期</span>
-          <span style="font-weight:500;">${record.date}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
-          <span style="color:var(--t3);">時間</span>
-          <span style="font-weight:500;">${record.time || '—'}</span>
-        </div>
-        ${record.note ? `
-        <div style="display:flex;justify-content:space-between;padding:8px 0;">
-          <span style="color:var(--t3);">備註</span>
-          <span style="font-weight:500;">${record.note}</span>
-        </div>` : ''}
       </div>
+      <!-- 【修正 Bug 4】金額字體放大 -->
+      <div style="font-family:var(--mono);font-size:26px;font-weight:700;color:${catColor2};">${amtSign}${fmt(record.amount)}</div>
+    </div>
+    <!-- 品項區 -->
+    ${itemRows ? `<div style="background:var(--sf2);padding:8px 14px;border-radius:10px;margin-bottom:16px;">${itemRows}</div>` : ''}
+    <!-- 資訊欄 -->
+    <!-- 【修正 Bug 4】label 加「：」；value 改靠左；整體改縱排 -->
+    <div style="display:flex;flex-direction:column;gap:0;">
+      ${(()=>{
+        const accName = (S.cfg.accounts||[]).find(a=>a.id===record.account)?.name||'未設定';
+        const toAccName = record.type==='transfer'&&record.to_account ? (S.cfg.accounts||[]).find(a=>a.id===record.to_account)?.name||'' : '';
+        const infoRow = (label,val) => `
+          <div style="display:flex;flex-direction:column;gap:2px;padding:10px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:11px;color:var(--t3);font-weight:500;">${label}：</span>
+            <span style="font-size:15px;font-weight:600;color:var(--t1);">${val}</span>
+          </div>`;
+        let rows = infoRow('帳戶', accName);
+        if(toAccName) rows += infoRow('轉入帳戶', toAccName);
+        rows += infoRow('日期', record.date);
+        rows += infoRow('時間', record.time||'—');
+        // 【修正 Bug 2】備註優先 record.note，再看 items[0].note
+        const noteVal = record.note || (record.items&&record.items[0]&&record.items[0].note&&(record.type!=='expense'&&record.type!=='income')?record.items[0].note:'') || '';
+        if(noteVal) rows += infoRow('備註', noteVal);
+        return rows;
+      })()}
     </div>
   `;
 
-  // 開啟詳情頁
   document.getElementById('detail-page').classList.add('show');
   detailBox.querySelector('h2').textContent = titleText;
 
-  // 編輯按鈕
   const editBtn = detailBox.querySelector('#detail-edit-btn');
-  if (editBtn) {
+  if(editBtn){
     editBtn.onclick = () => {
       document.getElementById('detail-page').classList.remove('show');
       openAddPage(record);
