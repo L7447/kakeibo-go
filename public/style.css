@@ -385,7 +385,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 #detail-box{background:var(--sf);border-radius:20px 20px 0 0;border-top:1px solid var(--border);
   padding:20px 20px 36px;width:100%}
 #detail-box h3{font-size:15px;font-weight:600;margin-bottom:16px}
-#detail-box h2{font-size:15px;font-weight:600;margin-bottom:16px;flex:1;text-align:center}
+/* 【修正 Bug 4】記錄資訊頁標題字放大 */#detail-box h2{font-size:19px;font-weight:700;margin-bottom:16px;flex:1;text-align:center}
 /* detail info styles */
 .detail-title{font-size:18px;font-weight:600;text-align:left;margin-bottom:8px}
 .detail-amount{font-size:16px;text-align:right;margin-bottom:8px}
@@ -516,3 +516,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .debt-card.cleared{background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.3)}
 /* 已清償徽章 */
 .debt-cleared-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);color:#16a34a;font-size:11px;font-weight:700;letter-spacing:.3px}
+
+/* ── 記錄資訊頁：頂部按鈕放大美化 ────────────────── */
+#detail-box .bar-btn{width:42px;height:42px;font-size:19px;border-radius:50%;background:var(--sf2);border:1px solid var(--border);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;-webkit-tap-highlight-color:transparent}
+#detail-box .bar-btn:active{background:var(--sf)}
