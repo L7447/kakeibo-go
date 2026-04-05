@@ -419,7 +419,7 @@ function renderDebtSection(){
         +clearedBadge
         +'</div>'
         +'<div style="display:flex;gap:6px;flex-shrink:0;" onclick="event.stopPropagation()">'
-        +'<button onclick="openDebtOverlay('+i+')'" style="padding:4px 10px;border-radius:999px;background:var(--sf2);color:var(--t2);border:1px solid var(--border);font-size:12px;cursor:pointer;">✎</button>'
+        +'<button onclick="openDebtOverlay('+i+')" style="padding:4px 10px;border-radius:999px;background:var(--sf2);color:var(--t2);border:1px solid var(--border);font-size:12px;cursor:pointer;">✎</button>'
         +'<button onclick="deleteDebt('+i+')" class="row-del-btn" style="width:28px;height:28px;">✕</button>'
         +'</div></div>'
         +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);margin-bottom:8px;">'
@@ -497,7 +497,7 @@ function openDebtOverlay(idx){
       ◀ 返回列表</button>
 
     <div class="fg" style="margin-bottom:10px;"><label>名稱／描述</label>
-      <input type="text" class="finp" id="debt-name" value="${d?escHtml(d.name||'):''}" placeholder="例：國泰房貸、信用卡欠款"></div>
+      <input type="text" class="finp" id="debt-name" value="${d?escHtml(d.name||''):''}" placeholder="例：國泰房貸、信用卡欠款"></div>
 
     <div class="fg" style="margin-bottom:10px;"><label>分類</label>
       <div id="debt-cat-grid" style="display:flex;flex-wrap:wrap;gap:6px;"></div></div>
@@ -507,16 +507,16 @@ function openDebtOverlay(idx){
 
     <div style="display:flex;gap:8px;margin-bottom:10px;">
       <div class="fg" style="flex:1;"><label>開始日期</label>
-        <input type="date" class="finp" id="debt-startdate" value="${d?d.startDate||':''}" ></div>
+        <input type="date" class="finp" id="debt-startdate" value="${d?d.startDate||'':''}" ></div>
       <div class="fg" style="flex:1;"><label>時間</label>
-        <input type="time" class="finp" id="debt-starttime" value="${d?d.startTime||':''}" ></div>
+        <input type="time" class="finp" id="debt-starttime" value="${d?d.startTime||'':''}" ></div>
     </div>
 
     <div class="fg" style="margin-bottom:10px;"><label>負債總額</label>
-      <input type="number" class="finp" id="debt-amount" value="${d?d.amount||':''}" placeholder="0" inputmode="decimal"></div>
+      <input type="number" class="finp" id="debt-amount" value="${d?d.amount||'':''}" placeholder="0" inputmode="decimal"></div>
 
     <div class="fg" style="margin-bottom:10px;"><label>月還款金額</label>
-      <input type="number" class="finp" id="debt-payment" value="${d?d.payment||':''}" placeholder="0" inputmode="decimal"></div>
+      <input type="number" class="finp" id="debt-payment" value="${d?d.payment||'':''}" placeholder="0" inputmode="decimal"></div>
 
     <div class="fg" style="margin-bottom:10px;"><label>已還金額（選填）</label>
       <input type="number" class="finp" id="debt-paid" value="${d?d.paid||0:0}" placeholder="0" inputmode="decimal"></div>
@@ -555,10 +555,10 @@ function openDebtOverlay(idx){
     </div>
 
     <div class="fg" style="margin-bottom:10px;"><label>截止日期（選填）</label>
-      <input type="date" class="finp" id="debt-end-date" value="${d?d.endDate||':''}" ></div>
+      <input type="date" class="finp" id="debt-end-date" value="${d?d.endDate||'':''}" ></div>
 
     <div class="fg" style="margin-bottom:16px;"><label>備註（選填）</label>
-      <input type="text" class="finp" id="debt-note" value="${d?escHtml(d.note||'):''}" placeholder="選填"></div>
+      <input type="text" class="finp" id="debt-note" value="${d?escHtml(d.note||''):''}" placeholder="選填"></div>
 
     <div class="acc-btns">
       <button class="acc-btn" onclick="document.getElementById('adv-page').classList.remove('show');renderDebtSection()">取消</button>
@@ -3164,26 +3164,39 @@ let _budgetCatPath=[];
 function renderBudgetCatArea(){
   const area=document.getElementById('budget-cat-area');
   if(!area) return;
-  const topCats=S.cfg.categories&&S.cfg.categories.expense||[];
-  const parent=_budgetCatPath.length?_budgetCatPath[_budgetCatPath.length-1]:null;
-  const cats=parent?(parent.children||[]):topCats;
+  const topCats=S.cfg.categories && S.cfg.categories.expense || [];
+  const parent=_budgetCatPath.length ? _budgetCatPath[_budgetCatPath.length-1] : null;
+  const cats=parent ? (parent.children || []) : topCats;
   let html='';
+  
   if(_budgetCatPath.length){
     html+='<button onclick="_budgetCatPath.pop();renderBudgetCatArea()" style="background:none;border:none;color:var(--blue);font-size:12px;cursor:pointer;margin-bottom:6px;">◀ 返回</button>';
   }
+
   // 已選徽章
   if(_budgetCatSel){
-    const allC=flattenCats(topCats);
-    const selC=allC.find(x=>x.id===_budgetCatSel)||{name:_budgetCatSel,color:'#8B909A'};
-    html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:6px 10px;background:rgba(22,163,74,0.1);border:1px solid rgba(22,163,74,0.4);border-radius:var(--rs);">'      +'<span style="font-size:12px;color:#16a34a;font-weight:600;">已選：'+escHtml(selC.name)+'</span>'      +'<button onclick="_budgetCatSel=\'\';renderBudgetCatArea()" style="background:none;border:none;color:#16a34a;cursor:pointer;font-size:14px;margin-left:auto;">✕</button>'      +'</div>';
+    const allC = flattenCats(topCats);
+    const selC = allC.find(x => x.id === _budgetCatSel) || {name:_budgetCatSel, color:'#8B909A'};
+    html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:6px 10px;background:rgba(22,163,74,0.1);border:1px solid rgba(22,163,74,0.4);border-radius:var(--rs);">
+              <span style="font-size:12px;color:#16a34a;font-weight:600;">已選：${escHtml(selC.name)}</span>
+              <button onclick="_budgetCatSel='';renderBudgetCatArea()" style="background:none;border:none;color:#16a34a;cursor:pointer;font-size:14px;margin-left:auto;">✕</button>
+            </div>`;
   }
-  html+='<div style="display:flex;flex-wrap:wrap;gap:6px;">';
-  cats.forEach(c=>{
-    const isOn=_budgetCatSel===c.id;
-    html+='<div onclick="\'+(c.children&&c.children.length?'"_budgetCatPath.push({'+JSON.stringify(c)+');renderBudgetCatArea()"':'\"_budgetCatSel=\\\''+c.id+'\\\';renderBudgetCatArea()\"')+'" '      +'class="debt-cat-chip'+(isOn?' on':'')+'" style="'+(isOn?'border-color:'+c.color+';color:'+c.color+';':'')+'">'      +escHtml(c.name)+(c.children&&c.children.length?' ›':'')+'</div>';
+
+  html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+  cats.forEach(c => {
+    const isOn = _budgetCatSel === c.id;
+    // 使用模板字符串處理複雜的 onclick 邏輯
+    const clickAction = (c.children && c.children.length) 
+      ? `_budgetCatPath.push(${JSON.stringify(c).replace(/"/g, '&quot;')});renderBudgetCatArea()`
+      : `_budgetCatSel='${c.id}';renderBudgetCatArea()`;
+
+    html += `<div onclick="${clickAction}" class="debt-cat-chip${isOn ? ' on' : ''}" style="${isOn ? `border-color:${c.color};color:${c.color};` : ''}">
+              ${escHtml(c.name)}${c.children && c.children.length ? ' ›' : ''}
+            </div>`;
   });
-  html+='</div>';
-  area.innerHTML=html;
+  html += '</div>';
+  area.innerHTML = html;
 }
 
 function saveBudget(){
