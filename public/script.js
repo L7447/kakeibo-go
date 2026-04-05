@@ -1680,8 +1680,8 @@ function renderAddItems() {
             style="width:100%;text-align:center;font-size:14px">
         </div>
         <div style="display:flex;flex-direction:column;gap:2px;flex:1.2">
-          <span style="font-size:11px;color:var(--acc);font-weight:600;text-align:right">金額</span>
-          <input type="number" value="${it.price||''}" data-i="${i}" data-f="price"
+          <span style="font-size:11px;color:var(--orange);font-weight:600;text-align:right">金額</span>
+          <input type="number" value="${it.price||''}" placeholder="0" data-i="${i}" data-f="price"
             style="width:100%;color:var(--acc);text-align:right">
         </div>
         ${isMulti ? `<button class="item-del" data-i="${i}">✕</button>` : ''}`;
