@@ -483,10 +483,16 @@ function openDebtOverlay(idx){
   _debtCatSel=d?d.category:'';
   _debtCatParent=null;
 
-  // 使用 adv-page overlay（reuse）
-  const body=document.getElementById('adv-body');
-  document.getElementById('adv-title').textContent=d?'編輯負債':'新增負債';
-  document.getElementById('adv-add-btn').style.display='none';
+// 使用 adv-page overlay（reuse）
+  const body = document.getElementById('adv-body');
+  const titleEl = document.getElementById('adv-title'); // 先取得元素
+  titleEl.textContent = d ? '編輯負債' : '新增負債';
+  // --- 新增以下樣式設定以達到置中效果 ---
+  titleEl.style.textAlign = 'center'; // 文字置中
+  titleEl.style.width = '100%';       // 確保寬度撐滿父容器
+  titleEl.style.display = 'block';    // 確保它是區塊元素
+  // ------------------------------------
+  document.getElementById('adv-add-btn').style.display = 'none';
 
   const accOpts=(S.cfg.accounts||[]).map(a=>`<option value="${a.id}" ${d&&d.account===a.id?'selected':''}>${a.name}</option>`).join('');
 
@@ -3149,54 +3155,137 @@ function deleteBudget(bi){
 }
 
 /* ── 新增預算表單（Item 3）── */
-let _budgetCatSel='', _budgetTopCat=null;
+let _budgetCatSel = ''; // 最終選中的類別 ID
+let _budgetTopCatId = ''; // 目前展開的大類別 ID
 
 function openBudgetForm(){
-  // 【Item 3】每次都是新增，不讀取舊資料
-  _budgetCatSel=''; _budgetTopCat=null;
-  const body=document.getElementById('adv-body');
-  const topCats=S.cfg.categories&&S.cfg.categories.expense||[];
-  body.innerHTML='<div style="padding:8px 0">'    +'<button onclick="renderAdvBody()" style="background:none;border:none;color:var(--blue);font-size:15px;font-weight:600;cursor:pointer;margin-bottom:16px;">◀ 返回列表</button>'    +'<div class="fg" style="margin-bottom:10px;"><label>預算名稱（選填）</label><input type="text" class="finp" id="b-name" placeholder="例：食費、娛樂"></div>'    +'<div class="fg" style="margin-bottom:6px;"><label>選擇分類（不選=全類別預算）</label></div>'    +'<div id="budget-cat-area" style="margin-bottom:12px;"></div>'    +'<div class="fg" style="margin-bottom:10px;"><label>預算金額（每月）</label><input type="number" class="finp" id="b-amount" placeholder="0" inputmode="decimal"></div>'    +'<div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:8px;">預算顏色設定</div>'    +'<div style="background:var(--sf2);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;margin-bottom:14px;">'    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'    +'  <span style="width:10px;height:10px;border-radius:50%;background:#16a34a;flex-shrink:0;display:inline-block;"></span>'    +'  <span style="font-size:12px;flex:1;">預算 <input type="number" id="bc-green-pct" value="100" style="width:50px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--sf);color:var(--t1);font-size:12px;"> %（含）以上 → 綠色</span>'    +'</div>'    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'    +'  <span style="width:10px;height:10px;border-radius:50%;background:#F59E0B;flex-shrink:0;display:inline-block;"></span>'    +'  <span style="font-size:12px;flex:1;">預算 <input type="number" id="bc-orange-low" value="50" style="width:50px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--sf);color:var(--t1);font-size:12px;"> % ～ <input type="number" id="bc-orange-high" value="99" style="width:50px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--sf);color:var(--t1);font-size:12px;"> % → 橘色</span>'    +'</div>'    +'<div style="display:flex;align-items:center;gap:8px;">'    +'  <span style="width:10px;height:10px;border-radius:50%;background:#DC2626;flex-shrink:0;display:inline-block;"></span>'    +'  <span style="font-size:12px;flex:1;">低於以上範圍 → 紅色</span>'    +'</div></div>'    +'<div class="acc-btns" style="margin-top:4px;">'    +'<button class="acc-btn" onclick="renderAdvBody()">取消</button>'    +'<button class="acc-btn ok" onclick="saveBudget()">新增預算</button>'    +'</div></div>';
+  _budgetCatSel = ''; 
+  _budgetTopCatId = ''; 
+  const body = document.getElementById('adv-body');
+  
+  body.innerHTML = `
+    <div style="padding:8px 0">
+      <button onclick="renderAdvBody()" style="background:none;border:none;color:var(--blue);font-size:15px;font-weight:600;cursor:pointer;margin-bottom:16px;">◀ 返回列表</button>
+      
+      <div class="fg" style="margin-bottom:10px;">
+        <label>預算名稱（選填）</label>
+        <input type="text" class="finp" id="b-name" placeholder="例：食費、娛樂">
+      </div>
+
+      <div class="fg" style="margin-bottom:6px;">
+        <label>選擇預算範圍（不選 = 全類別總預算）</label>
+      </div>
+      
+      <!-- 類別選擇區域 -->
+      <div id="budget-cat-area" style="margin-bottom:12px;"></div>
+
+      <div class="fg" style="margin-bottom:10px;">
+        <label>預算金額（每月）</label>
+        <input type="number" class="finp" id="b-amount" placeholder="0" inputmode="decimal">
+      </div>
+
+      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:8px;">預算顏色設定</div>
+      <div style="background:var(--sf2);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#16a34a;flex-shrink:0;"></span>
+          <span style="font-size:12px;flex:1;">預算 <input type="number" id="bc-green-pct" value="100" style="width:45px;border:1px solid var(--border);border-radius:4px;padding:2px;background:var(--sf);color:var(--t1);"> % 以上 → 綠色</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#F59E0B;flex-shrink:0;"></span>
+          <span style="font-size:12px;flex:1;">預算 <input type="number" id="bc-orange-low" value="50" style="width:40px;border:1px solid var(--border);border-radius:4px;padding:2px;background:var(--sf);"> % ～ <input type="number" id="bc-orange-high" value="99" style="width:40px;border:1px solid var(--border);border-radius:4px;padding:2px;background:var(--sf);"> % → 橘色</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#DC2626;flex-shrink:0;"></span>
+          <span style="font-size:12px;flex:1;">低於以上範圍 → 紅色</span>
+        </div>
+      </div>
+
+      <div class="acc-btns">
+        <button class="acc-btn" onclick="renderAdvBody()">取消</button>
+        <button class="acc-btn ok" onclick="saveBudget()">新增預算</button>
+      </div>
+    </div>`;
+    
   renderBudgetCatArea();
 }
 
 let _budgetCatPath=[];
-function renderBudgetCatArea(){
-  const area=document.getElementById('budget-cat-area');
-  if(!area) return;
-  const topCats=S.cfg.categories && S.cfg.categories.expense || [];
-  const parent=_budgetCatPath.length ? _budgetCatPath[_budgetCatPath.length-1] : null;
-  const cats=parent ? (parent.children || []) : topCats;
-  let html='';
-  
-  if(_budgetCatPath.length){
-    html+='<button onclick="_budgetCatPath.pop();renderBudgetCatArea()" style="background:none;border:none;color:var(--blue);font-size:12px;cursor:pointer;margin-bottom:6px;">◀ 返回</button>';
-  }
+function renderBudgetCatArea() {
+  const area = document.getElementById('budget-cat-area');
+  if (!area) return;
 
-  // 已選徽章
-  if(_budgetCatSel){
-    const allC = flattenCats(topCats);
-    const selC = allC.find(x => x.id === _budgetCatSel) || {name:_budgetCatSel, color:'#8B909A'};
-    html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:6px 10px;background:rgba(22,163,74,0.1);border:1px solid rgba(22,163,74,0.4);border-radius:var(--rs);">
-              <span style="font-size:12px;color:#16a34a;font-weight:600;">已選：${escHtml(selC.name)}</span>
-              <button onclick="_budgetCatSel='';renderBudgetCatArea()" style="background:none;border:none;color:#16a34a;cursor:pointer;font-size:14px;margin-left:auto;">✕</button>
-            </div>`;
-  }
+  const topCats = S.cfg.categories?.expense || [];
+  const expandedCat = topCats.find(c => c.id === _budgetTopCatId);
+  const subCats = expandedCat?.children || [];
 
-  html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
-  cats.forEach(c => {
-    const isOn = _budgetCatSel === c.id;
-    // 使用模板字符串處理複雜的 onclick 邏輯
-    const clickAction = (c.children && c.children.length) 
-      ? `_budgetCatPath.push(${JSON.stringify(c).replace(/"/g, '&quot;')});renderBudgetCatArea()`
-      : `_budgetCatSel='${c.id}';renderBudgetCatArea()`;
+  let html = '';
 
-    html += `<div onclick="${clickAction}" class="debt-cat-chip${isOn ? ' on' : ''}" style="${isOn ? `border-color:${c.color};color:${c.color};` : ''}">
-              ${escHtml(c.name)}${c.children && c.children.length ? ' ›' : ''}
-            </div>`;
+  // --- 1. 大類別橫向列表 ---
+  html += '<div style="font-size:11px; color:var(--t3); margin-bottom:6px; letter-spacing:1px;">大類別</div>';
+  html += '<div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">';
+  topCats.forEach(c => {
+    const isSelected = _budgetCatSel === c.id;
+    const isExpanded = _budgetTopCatId === c.id;
+    const color = c.color || '#8B909A';
+    
+    // 樣式：若選中則上色，否則僅邊框
+    const style = isSelected 
+      ? `background:${color}22; border-color:${color}; color:${color}; font-weight:700; box-shadow: 0 0 0 1px ${color};`
+      : `border-color:var(--border); color:var(--t2);`;
+
+    html += `<div onclick="selectBudgetCat('${c.id}', true)" class="debt-cat-chip" style="${style} cursor:pointer; padding:6px 12px; border-radius:8px; border:1px solid; font-size:13px;">
+              ${escHtml(c.name)}
+             </div>`;
   });
   html += '</div>';
+
+  // --- 2. 子分類區域 (僅在有子類別時顯示) ---
+  if (subCats.length > 0) {
+    html += `<div style="font-size:11px; color:var(--t3); margin-bottom:6px; letter-spacing:1px;">「${escHtml(expandedCat.name)}」的細分類</div>`;
+    html += '<div style="display:flex; flex-wrap:wrap; gap:8px; padding:12px; background:var(--sf2); border-radius:12px; border:1px dashed var(--border);">';
+    subCats.forEach(sc => {
+      const isSelected = _budgetCatSel === sc.id;
+      const color = sc.color || expandedCat.color || '#8B909A';
+      
+      const style = isSelected
+        ? `background:${color}22; border-color:${color}; color:${color}; font-weight:700; box-shadow: 0 0 0 1px ${color};`
+        : `border-color:var(--border); background:var(--sf); color:var(--t2);`;
+
+      html += `<div onclick="selectBudgetCat('${sc.id}', false)" class="debt-cat-chip" style="${style} cursor:pointer; padding:5px 10px; border-radius:6px; border:1px solid; font-size:12px;">
+                ${escHtml(sc.name)}
+               </div>`;
+    });
+    html += '</div>';
+  } else if (_budgetTopCatId) {
+    html += `<div style="font-size:11px; color:var(--t3); font-style:italic;">※ 此類別無細分類</div>`;
+  }
+
   area.innerHTML = html;
+
+  // 自動填寫預算名稱 (如果名稱欄位是空的)
+  const nameInput = document.getElementById('b-name');
+  if (nameInput && !nameInput.value.trim() && _budgetCatSel) {
+    const all = [...topCats, ...topCats.flatMap(c => c.children || [])];
+    const found = all.find(x => x.id === _budgetCatSel);
+    if (found) nameInput.value = found.name;
+  }
+}
+
+/**
+ * 處理類別選擇
+ * @param {string} id 類別 ID
+ * @param {boolean} isTop 是否點擊大類別
+ */
+function selectBudgetCat(id, isTop) {
+  if (isTop) {
+    // 點擊大類別：展開該大類別，並將選擇設為該大類別
+    _budgetTopCatId = id;
+    _budgetCatSel = id;
+  } else {
+    // 點擊子分類：保持大類別展開，但將選擇設為子分類
+    _budgetCatSel = id;
+  }
+  renderBudgetCatArea();
 }
 
 function saveBudget(){
