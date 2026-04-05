@@ -370,7 +370,7 @@ function renderDebtSection(){
   let html = '';
 
   // 新增負債按鈕
-  html += '<button onclick="openDebtForm()" style="width:100%;padding:14px;margin-bottom:20px;background:var(--sf2);border:1px dashed var(--border);border-radius:var(--rs);color:var(--t2);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:.15s;">＋ 新增負債</button>';
+  html += '<button onclick="openDebtOverlay()" style="width:100%;padding:14px;margin-bottom:20px;background:var(--sf2);border:1px dashed var(--border);border-radius:var(--rs);color:var(--t2);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:.15s;">＋ 新增負債</button>';
 
   if(!items.length){
     html += '<div class="empty-tip" style="padding:32px 0;text-align:center">尚無負債記錄</div>';
@@ -419,7 +419,7 @@ function renderDebtSection(){
         +clearedBadge
         +'</div>'
         +'<div style="display:flex;gap:6px;flex-shrink:0;" onclick="event.stopPropagation()">'
-        +'<button onclick="openDebtForm('+i+')" style="padding:4px 10px;border-radius:999px;background:var(--sf2);color:var(--t2);border:1px solid var(--border);font-size:12px;cursor:pointer;">✎</button>'
+        +'<button onclick="openDebtOverlay('+i+')'" style="padding:4px 10px;border-radius:999px;background:var(--sf2);color:var(--t2);border:1px solid var(--border);font-size:12px;cursor:pointer;">✎</button>'
         +'<button onclick="deleteDebt('+i+')" class="row-del-btn" style="width:28px;height:28px;">✕</button>'
         +'</div></div>'
         +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);margin-bottom:8px;">'
@@ -476,100 +476,133 @@ function renderDebtCatGrid(parent){
 }
 
 /* ── 開啟負債表單（已新增「帳戶」下拉選單） ── */
-function openDebtForm(idx){
+/* ── 負債表單：獨立 Overlay 頁（Item 1 全面重寫）── */
+function openDebtOverlay(idx){
   const items=advLoad('debt');
-  const d=(idx!==undefined&&idx!==null)?items[idx]:null;
+  const d=(idx!==undefined&&idx!==null&&idx>=0)?items[idx]:null;
   _debtCatSel=d?d.category:'';
   _debtCatParent=null;
-  const el=document.getElementById('acc-debt-section');
-  
-  // 產生帳戶選項
-  const accOpts = (S.cfg.accounts || []).map(a => 
-    `<option value="${a.id}" ${d&&d.account===a.id?'selected':''}>${a.name}</option>`
-  ).join('');
-  
-  el.innerHTML='<div style="padding:4px 0">'
-    +'<button onclick="renderDebtSection()" style="background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;margin-bottom:12px;">◀ 返回列表</button>'
-    
-    +'<div class="fg" style="margin-bottom:10px;"><label>名稱／描述</label>'
-    +'<input type="text" class="finp" id="debt-name" value="'+(d?escHtml(d.name||''):'')+'" placeholder="例：國泰房貸、信用卡欠款"></div>'
-    
-    +'<div class="fg" style="margin-bottom:10px;"><label>分類</label>'
-    +'<div id="debt-cat-grid" style="display:flex;flex-wrap:wrap;gap:6px;"></div></div>'
-    
-    // 【本次新增】帳戶欄位
-    +'<div class="fg" style="margin-bottom:10px;"><label>帳戶</label>'
-    +'<select class="fsel" id="debt-account">'+accOpts+'</select></div>'
-    
-    +'<div style="display:flex;gap:8px;margin-bottom:10px;">'
-    +'<div class="fg" style="flex:1;"><label>開始日期</label>'
-    +'<input type="date" class="finp" id="debt-startdate" value="'+(d?d.startDate||'':'')+'"></div>'
-    +'<div class="fg" style="flex:1;"><label>時間</label>'
-    +'<input type="time" class="finp" id="debt-starttime" value="'+(d?d.startTime||'':'')+'"></div>'
-    +'</div>'
-    
-    +'<div class="fg" style="margin-bottom:10px;"><label>負債總額</label>'
-    +'<input type="number" class="finp" id="debt-amount" value="'+(d?d.amount:'')+'" placeholder="0" inputmode="decimal"></div>'
-    
-    +'<div class="fg" style="margin-bottom:10px;"><label>月還款金額</label>'
-    +'<input type="number" class="finp" id="debt-payment" value="'+(d?d.payment:'')+'" placeholder="0" inputmode="decimal"></div>'
-    
-    +'<div class="fg" style="margin-bottom:10px;"><label>已還金額（選填）</label>'
-    +'<input type="number" class="finp" id="debt-paid" value="'+(d?d.paid||0:0)+'" placeholder="0" inputmode="decimal"></div>'
-    
-    +'<div class="fg" style="margin-bottom:10px;">'
-    +'<div style="display:flex;align-items:center;gap:8px;">'
-    +'<input type="checkbox" id="debt-fixed-chk" style="width:18px;height:18px;cursor:pointer;" '+(d&&d.fixedDay?'checked':'')+' onchange="toggleDebtFixedDay()">'
-    +'<label for="debt-fixed-chk" style="font-size:13px;color:var(--t1);cursor:pointer;">固定還款日期（自動新增至固定支出）</label>'
-    +'</div>'
-    +'<div id="debt-fixed-day-row" style="margin-top:8px;display:'+(d&&d.fixedDay?'flex':'none')+';align-items:center;gap:8px;">'
-    +'<span style="font-size:13px;color:var(--t2);">每月</span>'
-    +'<input type="number" class="finp" id="debt-fixed-day" value="'+(d?d.fixedDay||'':'')+'" placeholder="15" min="1" max="31" inputmode="numeric" style="width:80px;">'
-    +'<span style="font-size:13px;color:var(--t2);">日</span>'
-    +'</div></div>'
-    
-    +'<div class="fg" style="margin-bottom:10px;"><label>截止日期（選填）</label>'
-    +'<input type="date" class="finp" id="debt-end-date" value="'+(d?d.endDate||'':'')+'"></div>'
-    
-    +'<div class="fg" style="margin-bottom:16px;"><label>備註（選填）</label>'
-    +'<input type="text" class="finp" id="debt-note" value="'+(d?escHtml(d.note||''):'')+'" placeholder="選填"></div>'
-    
-    +'<div class="acc-btns">'
-    +'<button class="acc-btn" onclick="renderDebtSection()">取消</button>'
-    +'<button class="acc-btn ok" onclick="saveDebt('+(idx!==undefined&&idx!==null?idx:-1)+')">儲存</button>'
-    +'</div></div>';
+
+  // 使用 adv-page overlay（reuse）
+  const body=document.getElementById('adv-body');
+  document.getElementById('adv-title').textContent=d?'編輯負債':'新增負債';
+  document.getElementById('adv-add-btn').style.display='none';
+
+  const accOpts=(S.cfg.accounts||[]).map(a=>`<option value="${a.id}" ${d&&d.account===a.id?'selected':''}>${a.name}</option>`).join('');
+
+  body.innerHTML=`<div style="padding:4px 0">
+    <!-- 【Item 1】返回按鈕字放大 -->
+    <button onclick="renderDebtSection();document.getElementById('adv-page').classList.remove('show')"
+      style="background:none;border:none;color:var(--blue);font-size:16px;font-weight:600;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
+      ◀ 返回列表</button>
+
+    <div class="fg" style="margin-bottom:10px;"><label>名稱／描述</label>
+      <input type="text" class="finp" id="debt-name" value="${d?escHtml(d.name||'):''}" placeholder="例：國泰房貸、信用卡欠款"></div>
+
+    <div class="fg" style="margin-bottom:10px;"><label>分類</label>
+      <div id="debt-cat-grid" style="display:flex;flex-wrap:wrap;gap:6px;"></div></div>
+
+    <div class="fg" style="margin-bottom:10px;"><label>帳戶</label>
+      <select class="fsel" id="debt-account">${accOpts}</select></div>
+
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <div class="fg" style="flex:1;"><label>開始日期</label>
+        <input type="date" class="finp" id="debt-startdate" value="${d?d.startDate||':''}" ></div>
+      <div class="fg" style="flex:1;"><label>時間</label>
+        <input type="time" class="finp" id="debt-starttime" value="${d?d.startTime||':''}" ></div>
+    </div>
+
+    <div class="fg" style="margin-bottom:10px;"><label>負債總額</label>
+      <input type="number" class="finp" id="debt-amount" value="${d?d.amount||':''}" placeholder="0" inputmode="decimal"></div>
+
+    <div class="fg" style="margin-bottom:10px;"><label>月還款金額</label>
+      <input type="number" class="finp" id="debt-payment" value="${d?d.payment||':''}" placeholder="0" inputmode="decimal"></div>
+
+    <div class="fg" style="margin-bottom:10px;"><label>已還金額（選填）</label>
+      <input type="number" class="finp" id="debt-paid" value="${d?d.paid||0:0}" placeholder="0" inputmode="decimal"></div>
+
+    <!-- 【Item 1】週期功能（與固定支出相同） -->
+    <div class="fg" style="margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="debt-fixed-chk" style="width:18px;height:18px;cursor:pointer;"
+          ${d&&d.fixedDay?'checked':''} onchange="toggleDebtFixedDay()">
+        <label for="debt-fixed-chk" style="font-size:13px;color:var(--t1);cursor:pointer;">固定還款（自動新增至固定支出）</label>
+      </div>
+      <div id="debt-fixed-day-row" style="margin-top:10px;display:${d&&d.fixedDay?'block':'none'};">
+        <div class="fg" style="margin-bottom:8px;"><label>每月還款日</label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:13px;color:var(--t2);">每月</span>
+            <input type="number" class="finp" id="debt-fixed-day" value="${d?d.fixedDay||'':''}"
+              placeholder="15" min="1" max="31" inputmode="numeric" style="width:80px;">
+            <span style="font-size:13px;color:var(--t2);">日</span>
+          </div>
+        </div>
+        <!-- 週期功能 -->
+        <div class="fg" style="margin-bottom:8px;"><label>還款週期</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="font-size:13px;color:var(--t2);">每</span>
+            <input type="number" class="finp" id="debt-period-n" value="${d?d.periodN||1:1}"
+              min="1" inputmode="numeric" style="width:70px;">
+            <select class="fsel" id="debt-period-unit" style="flex:1">
+              <option value="day" ${d&&d.periodUnit==='day'?'selected':''}>天</option>
+              <option value="week" ${d&&d.periodUnit==='week'?'selected':''}>週</option>
+              <option value="month" ${(!d||!d.periodUnit||d.periodUnit==='month')?'selected':''}>月</option>
+              <option value="year" ${d&&d.periodUnit==='year'?'selected':''}>年</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fg" style="margin-bottom:10px;"><label>截止日期（選填）</label>
+      <input type="date" class="finp" id="debt-end-date" value="${d?d.endDate||':''}" ></div>
+
+    <div class="fg" style="margin-bottom:16px;"><label>備註（選填）</label>
+      <input type="text" class="finp" id="debt-note" value="${d?escHtml(d.note||'):''}" placeholder="選填"></div>
+
+    <div class="acc-btns">
+      <button class="acc-btn" onclick="document.getElementById('adv-page').classList.remove('show');renderDebtSection()">取消</button>
+      <button class="acc-btn ok" onclick="saveDebtFromOverlay(${idx!==undefined&&idx!==null&&idx>=0?idx:-1})">儲存</button>
+    </div>
+  </div>`;
 
   renderDebtCatGrid();
+  openOverlay('adv-page');
 }
 
-/* ── 儲存負債（已儲存帳戶欄位 + 自動新增固定支出） ── */
+function saveDebtFromOverlay(idx){ saveDebt(idx); document.getElementById('adv-page').classList.remove('show'); }
+
+/* ── 儲存負債 ── */
 async function saveDebt(idx){
   const items = advLoad('debt');
   const isEdit = (idx >= 0);
-  
+
   const name = document.getElementById('debt-name').value.trim();
   if(!name){ toast('請輸入名稱'); return; }
-  
-  // 【修正 Bug 1】驗證分類是否已選擇，未選則提示使用者
+
   if(!_debtCatSel){ toast('請選擇負債分類'); return; }
 
   const amount = parseFloat(document.getElementById('debt-amount').value)||0;
   if(!amount){ toast('請輸入負債總額'); return; }
-  
+
   const newDebt = {
-    name: name,
+    name,
     category: _debtCatSel,
-    account: document.getElementById('debt-account').value || '',   // 【本次新增】帳戶
-    amount: amount,
+    account: document.getElementById('debt-account').value || '',
+    amount,
     payment: parseFloat(document.getElementById('debt-payment').value)||0,
     paid: parseFloat(document.getElementById('debt-paid').value)||0,
-    fixedDay: document.getElementById('debt-fixed-chk').checked ? parseInt(document.getElementById('debt-fixed-day').value)||15 : null,
+    fixedDay: document.getElementById('debt-fixed-chk').checked
+      ? parseInt(document.getElementById('debt-fixed-day').value)||15 : null,
+    // 【Item 1】週期欄位
+    periodN: parseInt(document.getElementById('debt-period-n')?.value)||1,
+    periodUnit: document.getElementById('debt-period-unit')?.value||'month',
     endDate: document.getElementById('debt-end-date').value||'',
     startDate: document.getElementById('debt-startdate').value||'',
     startTime: document.getElementById('debt-starttime').value||'',
     note: document.getElementById('debt-note').value.trim()
   };
-  
+
   if(isEdit){
     items[idx] = newDebt;
     toast('已更新負債');
@@ -577,23 +610,21 @@ async function saveDebt(idx){
     items.push(newDebt);
     toast('已新增負債');
   }
-  
+
   advSave('debt', items);
-  
-  // 如果勾選固定還款，自動新增至 recurring（已帶入帳戶）
+
   if(newDebt.fixedDay){
-    // 【修正 Bug 1a】等待固定支出建立完畢，帳戶餘額才會更新
     await autoAddDebtToRecurring(newDebt);
   }
-  
-  // 【修正 Bug 3】儲存後同時更新負債列表與帳戶總覽（總負債、淨資產）
+
   renderDebtSection();
   renderAccounts();
 }
 
+
 function toggleDebtFixedDay(){
   const chk=document.getElementById('debt-fixed-chk');
-  document.getElementById('debt-fixed-day-row').style.display=chk.checked?'flex':'none';
+  document.getElementById('debt-fixed-day-row').style.display=chk.checked?'block':'none';
 }
 
 /* ── 自動把負債的「固定還款」轉成 recurring 固定支出項目 ── */
@@ -612,8 +643,9 @@ async function autoAddDebtToRecurring(debt){
     amount: debt.payment || 0,
     startdate: debt.startDate || todayStr(),
     time: debt.startTime || '00:00',
-    periodN: 1,
-    periodUnit: 'month',
+    // 【Item 1】使用負債設定的週期
+    periodN: debt.periodN || 1,
+    periodUnit: debt.periodUnit || 'month',
     note: '固定還款：' + debt.name,
     endDate: debt.endDate || '',
     account: debt.account || '',  // 【修正 Bug 2】將負債帳戶帶入固定支出，避免顯示「未設定」
@@ -1588,47 +1620,72 @@ function renderAddItems() {
   // ── 存錢筒：items-list 清空，由 piggy-type-section 負責 ──
   if (S.addType === 'piggy') { list.innerHTML = ''; return; }
 
-  // ── 【Item 6】轉帳：直接在 items-list 渲染轉出/轉入/金額 ──
+  // ── 【Item 5】轉帳：轉出/轉入同一行 + 交換按鈕 ──
   if (S.addType === 'transfer') {
     const accOpts = (S.cfg.accounts||[]).map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
     const it = S.addItems[0] || {};
     list.innerHTML = `
-      <div class="fg" style="margin-bottom:10px;">
-        <label style="font-size:11px;color:var(--t3);letter-spacing:.7px">轉出帳戶</label>
-        <select class="fsel" id="transfer-from-sel">${accOpts}</select>
-      </div>
-      <div class="fg" style="margin-bottom:10px;">
-        <label style="font-size:11px;color:var(--t3);letter-spacing:.7px">轉入帳戶</label>
-        <select class="fsel" id="transfer-to-sel">${accOpts}</select>
+      <div style="margin-bottom:12px;">
+        <div style="display:flex;align-items:flex-end;gap:6px;">
+          <div class="fg" style="flex:1;margin-bottom:0">
+            <label style="font-size:11px;color:var(--t3);letter-spacing:.7px">轉出帳戶</label>
+            <select class="fsel" id="transfer-from-sel">${accOpts}</select>
+          </div>
+          <!-- 交換按鈕 -->
+          <button id="transfer-swap-btn" type="button"
+            style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:var(--sf2);
+                   border:1px solid var(--border);font-size:16px;cursor:pointer;
+                   display:flex;align-items:center;justify-content:center;margin-bottom:1px;
+                   -webkit-tap-highlight-color:transparent;transition:.15s;"
+            title="交換帳戶">⇄</button>
+          <div class="fg" style="flex:1;margin-bottom:0">
+            <label style="font-size:11px;color:var(--t3);letter-spacing:.7px">轉入帳戶</label>
+            <select class="fsel" id="transfer-to-sel">${accOpts}</select>
+          </div>
+        </div>
       </div>
       <div class="fg">
         <label style="font-size:11px;color:var(--t3);letter-spacing:.7px">金額</label>
         <input type="number" class="finp" id="transfer-amt-inp" placeholder="0"
           inputmode="decimal" value="${it.amount||''}">
       </div>`;
-    // 預設選取值
     const fromSel = list.querySelector('#transfer-from-sel');
     const toSel   = list.querySelector('#transfer-to-sel');
     if(it.from) fromSel.value = it.from;
     if(it.to)   toSel.value   = it.to;
-    // 綁定事件 → 更新 S.addItems[0]
     fromSel.addEventListener('change',()=>{ S.addItems[0].from=fromSel.value; });
     toSel.addEventListener('change',  ()=>{ S.addItems[0].to=toSel.value; });
     list.querySelector('#transfer-amt-inp').addEventListener('input', e=>{
       S.addItems[0].amount=parseFloat(e.target.value)||0; calcTotal();
     });
+    // 交換按鈕：互換兩個 select 的值
+    list.querySelector('#transfer-swap-btn').addEventListener('click',()=>{
+      const tmp = fromSel.value;
+      fromSel.value = toSel.value;
+      toSel.value = tmp;
+      S.addItems[0].from = fromSel.value;
+      S.addItems[0].to   = toSel.value;
+    });
     return;
   }
 
-  // ── 【Item 7】調整：帳戶在最上方，金額在下 ──
+  // ── 【Item 6】調整：帳戶在最上方，顯示目前餘額，換帳戶即時更新 ──
   if (S.addType === 'adjust') {
-    const accOpts = (S.cfg.accounts||[]).map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+    const accs = S.cfg.accounts||[];
+    const accOpts = accs.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
     const it = S.addItems[0] || {};
-    const curAcc = document.getElementById('f-acc')?.value || '';
+    const curAcc = document.getElementById('f-acc')?.value || (accs[0]?.id||'');
+    const curBal = accs.find(a=>a.id===curAcc)?.balance ?? '';
     list.innerHTML = `
       <div class="fg" style="margin-bottom:10px;">
         <label style="font-size:11px;color:var(--t3);letter-spacing:.7px">帳戶</label>
         <select class="fsel" id="adjust-acc-sel">${accOpts}</select>
+      </div>
+      <!-- 目前餘額提示 -->
+      <div id="adjust-bal-row" style="margin-bottom:10px;padding:8px 12px;background:var(--sf2);
+           border:1px solid var(--border);border-radius:var(--rs);font-size:13px;color:var(--t2);">
+        目前餘額：<strong id="adjust-bal-disp" style="font-family:var(--mono);color:var(--t1);">
+          NT$ ${fmt(curBal||0)}</strong>
       </div>
       <div class="fg">
         <label style="font-size:11px;color:var(--t3);letter-spacing:.7px">調整後金額</label>
@@ -1637,9 +1694,13 @@ function renderAddItems() {
       </div>`;
     const adjAcc = list.querySelector('#adjust-acc-sel');
     if(curAcc) adjAcc.value = curAcc;
+    // 換帳戶 → 即時更新餘額顯示
     adjAcc.addEventListener('change',()=>{
       const fa = document.getElementById('f-acc');
       if(fa) fa.value = adjAcc.value;
+      const selAcc = (S.cfg.accounts||[]).find(a=>a.id===adjAcc.value);
+      const balDisp = document.getElementById('adjust-bal-disp');
+      if(balDisp) balDisp.textContent = 'NT$ '+ fmt(selAcc?.balance??0);
     });
     list.querySelector('#adjust-amt-inp').addEventListener('input', e=>{
       S.addItems[0].amount = parseFloat(e.target.value)||0; calcTotal();
@@ -2764,9 +2825,9 @@ function openAdvPage(mode){
 async function renderAdvBody(){
   const el = document.getElementById('adv-body');
   if (_advMode === 'piggy') {
-    await renderPiggyList(el);   // 確保列表頁使用最新後端資料
+    await renderPiggyList(el);
   } else if (_advMode === 'budget') {
-    renderBudgetList(el);
+    await renderBudgetList(el);  // 【Item 3/4】改為 async
   } else if (_advMode === 'recurring') {
     renderRecurringList(el);
   }
@@ -2984,63 +3045,161 @@ function deletePiggy(i){
 function openPiggyDeposit(i){ openPiggyDetail(i); }
 
 /* ─── 預算管理 ─── */
-function renderBudgetList(el){
-  const data=advLoad('budget');
-  const cfg=data[0]||{};
-  const cats=flattenCats(S.cfg.categories&&S.cfg.categories.expense||[]);
+/* ── 預算管理全面重寫（Items 3 & 4）─────────────────────── */
+
+// 顏色設定預設值
+const BUDGET_COLOR_DEFAULTS = [
+  {pct:100, op:'gte', color:'#16a34a', label:'預算%（含）以上'},
+  {pct1:50, pct2:99, op:'range', color:'#F59E0B', label:'預算50%～99%'},
+  {pct:49,  op:'lt',  color:'#DC2626', label:'預算低於50%'},
+];
+
+// 取得本月支出（依分類 ID 加總）
+let _budgetMonthSpend = {};
+async function calcBudgetMonthSpend(){
   const thisMonth=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
-  el.innerHTML='<div style="padding:8px 0">'
-    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
-    +'<div style="font-size:13px;font-weight:600;color:var(--t1);">'+thisMonth.replace('-','年')+'月預算</div>'
-    +'<button onclick="openBudgetForm()" style="padding:5px 12px;border-radius:999px;background:var(--acc-d);color:var(--acc);border:1px solid var(--acc);font-size:12px;cursor:pointer;">✎ 編輯</button>'
-    +'</div>'
-    +(cfg.savings?'<div class="rpt-card" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">'
-    +'<span style="font-weight:600;">💰 儲蓄目標</span>'
-    +'<span style="font-family:var(--mono);color:var(--acc);font-weight:700;">NT$ '+fmt(cfg.savings)+'</span></div>':'')
-    +(Object.keys(cfg.cats||{}).map(cid=>{
-        const c=cats.find(x=>x.id===cid)||{name:cid,color:'#8B909A'};
-        const budAmt=cfg.cats[cid];
-        return '<div class="rpt-card" style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">'
-          +'<div style="display:flex;align-items:center;gap:8px;">'
-          +(c.icon?'<img src="'+resolveIconUrl(c.icon)+'" style="width:22px;height:22px;border-radius:5px;object-fit:cover;">'
-            :'<span style="width:10px;height:10px;border-radius:50%;background:'+(c.color||'#8B909A')+';flex-shrink:0;display:inline-block;"></span>')
-          +'<span>'+c.name+'</span></div>'
-          +'<span style="font-family:var(--mono);color:var(--red);">NT$ '+fmt(budAmt)+'</span></div>';
-    }).join('')||'<div class="empty-tip">尚未設定類別預算</div>')
-    +'</div>';
+  let recs=[];
+  try{ recs=await api('/api/records'); }catch(e){}
+  const spend={};
+  recs.filter(r=>r.type==='expense'&&r.date&&r.date.startsWith(thisMonth)).forEach(r=>{
+    (r.items||[]).forEach(it=>{
+      if(it.category) spend[it.category]=(spend[it.category]||0)+(parseFloat(it.price||0)*(parseFloat(it.qty||1)));
+    });
+    if(!r.items||!r.items.length) spend[r.category]=(spend[r.category]||0)+(parseFloat(r.amount||0));
+  });
+  _budgetMonthSpend=spend;
 }
 
-function openBudgetForm(){
-  const data=advLoad('budget');
-  const cfg=data[0]||{cats:{}};
-  const cats=flattenCats(S.cfg.categories&&S.cfg.categories.expense||[]);
-  let rows=cats.map(c=>'<div class="fg" style="margin-bottom:8px;">'
-    +'<label style="display:flex;align-items:center;gap:6px;">'
-    +(c.icon?'<img src="'+resolveIconUrl(c.icon)+'" style="width:18px;height:18px;border-radius:4px;object-fit:cover;">'
-      :'<span style="width:10px;height:10px;border-radius:50%;background:'+(c.color||'#8B909A')+';display:inline-block;"></span>')
-    +c.name+'</label>'
-    +'<input type="number" class="finp" id="bcat-'+c.id+'" value="'+(cfg.cats&&cfg.cats[c.id]||'')+'" placeholder="0（留空=不限）" inputmode="decimal">'
-    +'</div>').join('');
-  const body=document.getElementById('adv-body');
-  body.innerHTML='<div style="padding:8px 0">'
-    +'<div class="fg"><label>💰 儲蓄金額</label><input type="number" class="finp" id="b-savings" value="'+(cfg.savings||'')+'" placeholder="0" inputmode="decimal"></div>'
-    +'<div style="font-size:12px;color:var(--t3);margin-bottom:10px;">各類別預算（留空=不限制）</div>'
-    +rows
-    +'<div class="acc-btns" style="margin-top:16px;">'
-    +'<button class="acc-btn" onclick="renderAdvBody()">取消</button>'
-    +'<button class="acc-btn ok" onclick="saveBudget()">儲存</button>'
-    +'</div></div>';
+function getBudgetBarColor(spent, budget){
+  if(!budget) return '#8B909A';
+  const pct = Math.round(spent/budget*100);
+  // 低於 50% → 紅；50~99% → 橘；100%+ → 綠
+  if(pct >= 100) return '#16a34a';
+  if(pct >= 50)  return '#F59E0B';
+  return '#DC2626';
 }
-function saveBudget(){
+
+/* ── 預算列表（每組獨立欄位，可點擊查看詳情）── */
+async function renderBudgetList(el){
+  await calcBudgetMonthSpend();
+  const data=advLoad('budget');
   const cats=flattenCats(S.cfg.categories&&S.cfg.categories.expense||[]);
-  const savings=parseFloat(document.getElementById('b-savings').value)||0;
-  const catBud={};
-  cats.forEach(c=>{
-    const v=parseFloat(document.getElementById('bcat-'+c.id)?.value||0);
-    if(v>0) catBud[c.id]=v;
+  const thisMonth=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
+  const label=thisMonth.replace('-','年')+'月';
+
+  if(!data.length){
+    el.innerHTML='<div class="empty-tip" style="padding:32px 0;text-align:center">尚無預算<br>按右上 ＋ 新增</div>';
+    return;
+  }
+
+  let html='<div style="padding:4px 0">';
+  html+='<div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:14px;">'+label+'預算</div>';
+
+  data.forEach((b,bi)=>{
+    const cObj = b.catId ? cats.find(x=>x.id===b.catId)||{name:b.catId,color:'#8B909A'} : null;
+    const name = b.name || (cObj?cObj.name:'未命名');
+    const budget = parseFloat(b.amount)||0;
+    const spent = cObj ? (_budgetMonthSpend[b.catId]||0) : Object.keys(_budgetMonthSpend).reduce((s,k)=>s+(_budgetMonthSpend[k]||0),0);
+    const remain = Math.max(0, budget-spent);
+    const pct = budget>0 ? Math.min(100,Math.round(spent/budget*100)) : 0;
+    const barColor = getBudgetBarColor(spent, budget);
+    const iconHtml = cObj?.icon
+      ? '<img src="'+resolveIconUrl(cObj.icon)+'" style="width:22px;height:22px;border-radius:5px;object-fit:cover;">'
+      : '<span style="width:10px;height:10px;border-radius:50%;background:'+(cObj?.color||'#8B909A')+';flex-shrink:0;display:inline-block;"></span>';
+
+    html += '<div class="rpt-card" style="margin-bottom:10px;cursor:pointer;" onclick="openBudgetDetail('+bi+')">';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
+    html += '<div style="display:flex;align-items:center;gap:8px;">'+iconHtml+'<span style="font-weight:600;font-size:14px;">'+escHtml(name)+'</span></div>';
+    html += '<button onclick="event.stopPropagation();deleteBudget('+bi+')" class="row-del-btn">✕</button>';
+    html += '</div>';
+    html += '<div style="height:6px;background:var(--sf2);border-radius:3px;margin-bottom:6px;overflow:hidden;">';
+    html += '<div style="width:'+pct+'%;height:100%;background:'+barColor+';border-radius:3px;transition:width .3s;"></div></div>';
+    html += '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);">';
+    html += '<span>已用 <strong style="font-family:var(--mono);color:'+barColor+';">NT$ '+fmt(spent)+'</strong></span>';
+    html += '<span>剩餘 <strong style="font-family:var(--mono);color:var(--t1);">NT$ '+fmt(remain)+'</strong></span>';
+    html += '</div></div>';
   });
-  advSave('budget',[{savings,cats:catBud}]);
-  renderAdvBody(); toast('預算已儲存');
+
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function openBudgetDetail(bi){
+  const data=advLoad('budget');
+  const b=data[bi];
+  if(!b) return;
+  const cats=flattenCats(S.cfg.categories&&S.cfg.categories.expense||[]);
+  const cObj = b.catId ? cats.find(x=>x.id===b.catId)||{name:b.catId,color:'#8B909A'} : null;
+  const name = b.name || (cObj?cObj.name:'未命名');
+  const budget = parseFloat(b.amount)||0;
+  const spent = cObj ? (_budgetMonthSpend[b.catId]||0) : Object.keys(_budgetMonthSpend).reduce((s,k)=>s+(_budgetMonthSpend[k]||0),0);
+  const remain = Math.max(0, budget-spent);
+  const body=document.getElementById('adv-body');
+  body.innerHTML='<div style="padding:8px 0">'    +'<button onclick="renderAdvBody()" style="background:none;border:none;color:var(--blue);font-size:15px;font-weight:600;cursor:pointer;margin-bottom:16px;">◀ 返回列表</button>'    +'<div class="rpt-card" style="margin-bottom:10px;">'    +'<div style="font-size:11px;color:var(--t3);margin-bottom:4px;">預算名稱</div>'    +'<div style="font-size:18px;font-weight:700;margin-bottom:12px;">'+escHtml(name)+'</div>'    +'<div style="display:flex;justify-content:space-between;margin-bottom:6px;">'    +'<div style="text-align:center;flex:1;"><div style="font-size:11px;color:var(--t3);">預算總額</div><div style="font-size:18px;font-weight:700;font-family:var(--mono);">NT$ '+fmt(budget)+'</div></div>'    +'<div style="text-align:center;flex:1;"><div style="font-size:11px;color:var(--t3);">已使用</div><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--red);">NT$ '+fmt(spent)+'</div></div>'    +'<div style="text-align:center;flex:1;"><div style="font-size:11px;color:var(--t3);">剩餘預算</div><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--acc);">NT$ '+fmt(remain)+'</div></div>'    +'</div></div>'    +'</div>';
+}
+
+function deleteBudget(bi){
+  const data=advLoad('budget');
+  customConfirm(data[bi]?.name||'此預算').then(ok=>{
+    if(!ok) return;
+    data.splice(bi,1);
+    advSave('budget',data);
+    renderAdvBody(); toast('已刪除');
+  });
+}
+
+/* ── 新增預算表單（Item 3）── */
+let _budgetCatSel='', _budgetTopCat=null;
+
+function openBudgetForm(){
+  // 【Item 3】每次都是新增，不讀取舊資料
+  _budgetCatSel=''; _budgetTopCat=null;
+  const body=document.getElementById('adv-body');
+  const topCats=S.cfg.categories&&S.cfg.categories.expense||[];
+  body.innerHTML='<div style="padding:8px 0">'    +'<button onclick="renderAdvBody()" style="background:none;border:none;color:var(--blue);font-size:15px;font-weight:600;cursor:pointer;margin-bottom:16px;">◀ 返回列表</button>'    +'<div class="fg" style="margin-bottom:10px;"><label>預算名稱（選填）</label><input type="text" class="finp" id="b-name" placeholder="例：食費、娛樂"></div>'    +'<div class="fg" style="margin-bottom:6px;"><label>選擇分類（不選=全類別預算）</label></div>'    +'<div id="budget-cat-area" style="margin-bottom:12px;"></div>'    +'<div class="fg" style="margin-bottom:10px;"><label>預算金額（每月）</label><input type="number" class="finp" id="b-amount" placeholder="0" inputmode="decimal"></div>'    +'<div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:8px;">預算顏色設定</div>'    +'<div style="background:var(--sf2);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;margin-bottom:14px;">'    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'    +'  <span style="width:10px;height:10px;border-radius:50%;background:#16a34a;flex-shrink:0;display:inline-block;"></span>'    +'  <span style="font-size:12px;flex:1;">預算 <input type="number" id="bc-green-pct" value="100" style="width:50px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--sf);color:var(--t1);font-size:12px;"> %（含）以上 → 綠色</span>'    +'</div>'    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'    +'  <span style="width:10px;height:10px;border-radius:50%;background:#F59E0B;flex-shrink:0;display:inline-block;"></span>'    +'  <span style="font-size:12px;flex:1;">預算 <input type="number" id="bc-orange-low" value="50" style="width:50px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--sf);color:var(--t1);font-size:12px;"> % ～ <input type="number" id="bc-orange-high" value="99" style="width:50px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--sf);color:var(--t1);font-size:12px;"> % → 橘色</span>'    +'</div>'    +'<div style="display:flex;align-items:center;gap:8px;">'    +'  <span style="width:10px;height:10px;border-radius:50%;background:#DC2626;flex-shrink:0;display:inline-block;"></span>'    +'  <span style="font-size:12px;flex:1;">低於以上範圍 → 紅色</span>'    +'</div></div>'    +'<div class="acc-btns" style="margin-top:4px;">'    +'<button class="acc-btn" onclick="renderAdvBody()">取消</button>'    +'<button class="acc-btn ok" onclick="saveBudget()">新增預算</button>'    +'</div></div>';
+  renderBudgetCatArea();
+}
+
+let _budgetCatPath=[];
+function renderBudgetCatArea(){
+  const area=document.getElementById('budget-cat-area');
+  if(!area) return;
+  const topCats=S.cfg.categories&&S.cfg.categories.expense||[];
+  const parent=_budgetCatPath.length?_budgetCatPath[_budgetCatPath.length-1]:null;
+  const cats=parent?(parent.children||[]):topCats;
+  let html='';
+  if(_budgetCatPath.length){
+    html+='<button onclick="_budgetCatPath.pop();renderBudgetCatArea()" style="background:none;border:none;color:var(--blue);font-size:12px;cursor:pointer;margin-bottom:6px;">◀ 返回</button>';
+  }
+  // 已選徽章
+  if(_budgetCatSel){
+    const allC=flattenCats(topCats);
+    const selC=allC.find(x=>x.id===_budgetCatSel)||{name:_budgetCatSel,color:'#8B909A'};
+    html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:6px 10px;background:rgba(22,163,74,0.1);border:1px solid rgba(22,163,74,0.4);border-radius:var(--rs);">'      +'<span style="font-size:12px;color:#16a34a;font-weight:600;">已選：'+escHtml(selC.name)+'</span>'      +'<button onclick="_budgetCatSel=\'\';renderBudgetCatArea()" style="background:none;border:none;color:#16a34a;cursor:pointer;font-size:14px;margin-left:auto;">✕</button>'      +'</div>';
+  }
+  html+='<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+  cats.forEach(c=>{
+    const isOn=_budgetCatSel===c.id;
+    html+='<div onclick="\'+(c.children&&c.children.length?'"_budgetCatPath.push({'+JSON.stringify(c)+');renderBudgetCatArea()"':'\"_budgetCatSel=\\\''+c.id+'\\\';renderBudgetCatArea()\"')+'" '      +'class="debt-cat-chip'+(isOn?' on':'')+'" style="'+(isOn?'border-color:'+c.color+';color:'+c.color+';':'')+'">'      +escHtml(c.name)+(c.children&&c.children.length?' ›':'')+'</div>';
+  });
+  html+='</div>';
+  area.innerHTML=html;
+}
+
+function saveBudget(){
+  const amount=parseFloat(document.getElementById('b-amount')?.value)||0;
+  if(!amount){ toast('請輸入預算金額'); return; }
+  const name=document.getElementById('b-name')?.value.trim()||'';
+  const greenPct=parseInt(document.getElementById('bc-green-pct')?.value||'100')||100;
+  const orangeLow=parseInt(document.getElementById('bc-orange-low')?.value||'50')||50;
+  const orangeHigh=parseInt(document.getElementById('bc-orange-high')?.value||'99')||99;
+  const data=advLoad('budget');
+  data.push({
+    name, catId:_budgetCatSel||null, amount,
+    colorRules:{greenPct, orangeLow, orangeHigh}
+  });
+  advSave('budget',data);
+  renderAdvBody(); toast('預算已新增');
 }
 
 let _recCatSel='', _recType='expense', _recCatPath=[];
@@ -3361,7 +3520,8 @@ function renderRecurringList(el){
       return '<div class="rpt-card" style="margin-bottom:10px;background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.3);">'        +'<div style="display:flex;align-items:center;justify-content:space-between;">'        +'<div style="flex:1;min-width:0;">'        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">'        +(c.icon?'<img src="'+resolveIconUrl(c.icon)+'" style="width:24px;height:24px;border-radius:6px;object-fit:cover;">':"<span style=\"width:10px;height:10px;border-radius:50%;background:"+(c.color||'#8B909A')+";flex-shrink:0;display:inline-block;\"></span>")        +'<span style="font-weight:600;font-size:14px;text-decoration:line-through;opacity:.6;">'+c.name+'</span>'        +'<span class="debt-cleared-badge">✓ 已清償</span>'        +'</div>'        +'<div style="font-size:11px;color:var(--t3);">清償日：'+(r.clearedAt||'—')+'　帳戶：'+accName+'</div>'        +(r.note?'<div style="font-size:11px;color:var(--t3);margin-top:2px;">'+r.note+'</div>':'')        +'</div>'        +'<div style="display:flex;align-items:center;gap:8px;">'        +'<span style="font-family:var(--mono);font-weight:700;color:'+typeColor+';">'+sign+fmt(r.amount)+'</span>'        +'<button onclick="deleteRecurring('+realIdx+')" class="row-del-btn">✕</button>'        +'</div></div></div>';
     }
     const nextDue=nextRecurringDate(r);
-    return '<div class="rpt-card" style="margin-bottom:10px;">'      +'<div style="display:flex;align-items:center;justify-content:space-between;">'      +'<div style="flex:1;min-width:0;">'      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'      +(c.icon?'<img src="'+resolveIconUrl(c.icon)+'" style="width:24px;height:24px;border-radius:6px;object-fit:cover;">':"<span style=\"width:10px;height:10px;border-radius:50%;background:"+(c.color||'#8B909A')+";flex-shrink:0;display:inline-block;\"></span>")      +'<span style="font-weight:600;font-size:14px;">'+c.name+'</span>'      +'<span style="font-size:11px;padding:1px 7px;border-radius:999px;background:'+(r.type==='expense'?'rgba(220,38,38,0.1)':"rgba(22,163,74,0.1)")+';color:'+typeColor+';">'+periodStr+'</span>'      +'</div>'      +'<div style="font-size:12px;color:var(--t3);">下次：'+nextDue+' '+r.time+(r.note?' · '+r.note:'')+'</div>'      +(r.endDate?'<div style="font-size:11px;color:var(--t3);margin-top:2px;">截止：'+r.endDate+'</div>':'')      +'<div style="font-size:11px;color:var(--t3);margin-top:2px;">帳戶：'+accName+'</div>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:8px;">'      +'<span style="font-family:var(--mono);font-weight:700;color:'+typeColor+';">'+sign+fmt(r.amount)+'</span>'      +'<button onclick="editRecurring('+realIdx+')" style="width:28px;height:28px;border-radius:50%;background:var(--sf2);color:var(--t2);border:1px solid var(--border);font-size:13px;cursor:pointer;">✎</button>'      +'<button onclick="deleteRecurring('+realIdx+')" class="row-del-btn">✕</button>'      +'</div></div></div>';
+    return '<div class="rpt-card" style="margin-bottom:10px;">'      +'<div style="display:flex;align-items:center;justify-content:space-between;">'      +'<div style="flex:1;min-width:0;">'      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'      +(c.icon?'<img src="'+resolveIconUrl(c.icon)+'" style="width:24px;height:24px;border-radius:6px;object-fit:cover;">':"<span style=\"width:10px;height:10px;border-radius:50%;background:"+(c.color||'#8B909A')+";flex-shrink:0;display:inline-block;\"></span>")      +'<span style="font-weight:600;font-size:14px;">'+c.name+'</span>'      +'<span style="font-size:11px;padding:1px 7px;border-radius:999px;background:'+(r.type==='expense'?'rgba(220,38,38,0.1)':"rgba(22,163,74,0.1)")+';color:'+typeColor+';">'+periodStr+'</span>'      +'</div>'      +'<div style="font-size:12px;color:var(--t3);">下次：'+nextDue+' '+r.time+'</div>'
+      +(r.note?'<div style="font-size:11px;color:var(--t3);margin-top:2px;">'+r.note+'</div>':'')      +(r.endDate?'<div style="font-size:11px;color:var(--t3);margin-top:2px;">截止：'+r.endDate+'</div>':'')      +'<div style="font-size:11px;color:var(--t3);margin-top:2px;">帳戶：'+accName+'</div>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:8px;">'      +'<span style="font-family:var(--mono);font-weight:700;color:'+typeColor+';">'+sign+fmt(r.amount)+'</span>'      +'<button onclick="editRecurring('+realIdx+')" style="width:28px;height:28px;border-radius:50%;background:var(--sf2);color:var(--t2);border:1px solid var(--border);font-size:13px;cursor:pointer;">✎</button>'      +'<button onclick="deleteRecurring('+realIdx+')" class="row-del-btn">✕</button>'      +'</div></div></div>';
   }
 
   let html = '';
