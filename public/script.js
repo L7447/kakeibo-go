@@ -236,9 +236,20 @@ const closeOverlay = id=>{
 let ACC_GROUPS=[];
 
 /* ── 帳戶總覽：點選「總資產」/「總負債」標籤的高亮切換 ── */
-function toggleAccSummaryTag(el){
-  el.classList.toggle('active'); // 切換選中狀態：外框加粗、數字放大 +4px
+function toggleAccSummaryTag(el) {
+  // 取得同一容器下的所有可切換元素（根據你的 HTML 結構）
+  const container = el.closest('.acc-break-container');
+  const items = container.querySelectorAll('.acc-break-container > div, .acc-break-container > .acc-assets, .acc-break-container > .acc-liab, .acc-break-container [onclick]');
+
+  // 移除其他項目的 active（保證單選）
+  items.forEach(item => {
+    if (item !== el) item.classList.remove('active');
+  });
+
+  // 對被點擊的元素切換 active（允許取消選中）
+  el.classList.toggle('active');
 }
+
 
 function renderAccounts(){
   const container=document.getElementById('acc-groups');
