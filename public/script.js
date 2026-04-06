@@ -1,3 +1,4 @@
+/* ── 為了讓 PWA 生效，必須在頁面載入時運行註冊腳本。 */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
@@ -5,6 +6,22 @@ if ('serviceWorker' in navigator) {
       .catch((err) => console.log('Service Worker 註冊失敗:', err));
   });
 }
+/* ── IOS使用Chrome，主動提示加入主畫面 ── */
+function showiOSInstallationPrompt() {
+  // 1. 檢查是否為 iOS
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;  
+  // 2. 檢查是否已經在 App 模式中（避免重複提示）
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  // 3. 如果是 iOS 且還沒安裝
+  if (isIOS && !isStandalone) {
+    const prompt = document.getElementById('ios-prompt');
+    if (prompt) {
+        prompt.style.display = 'block';
+    }
+  }
+}
+/* ── 在頁面載入後執行 */
+window.addEventListener('load', showiOSInstallationPrompt);
 
 /* ══ 全域狀態 ══════════════════════════════════ */
 /* ── 自訂確認框（取代 window.confirm）── */
@@ -868,13 +885,13 @@ function renderDaySummary(ds){
   el.style.display = 'flex';
   let html = '';
   if(expense > 0){
-    html += `<div class="day-summary-chip" style="background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,0.2);">
+    html += `<div class="day-summary-chip" style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);">
       <span class="dsc-lbl" style="color:var(--red1);">今日支出： </span>
       <span class="dsc-val" style="color:var(--red1);">-${fmt(expense)}</span>
     </div>`;
   }
   if(income > 0){
-    html += `<div class="day-summary-chip" style="background:rgba(22,163,74,0.05);border:1px solid rgba(22,163,74,0.2);">
+    html += `<div class="day-summary-chip" style="background:rgba(22,163,74,0.08);border:1px solid rgba(22,163,74,0.2);">
       <span class="dsc-lbl" style="color:var(--acc);">今日收入： </span>
       <span class="dsc-val" style="color:var(--acc);">+${fmt(income)}</span>
     </div>`;
