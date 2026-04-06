@@ -860,13 +860,13 @@ function renderDaySummary(ds){
   el.style.display = 'flex';
   let html = '';
   if(expense > 0){
-    html += `<div class="day-summary-chip" style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);">
+    html += `<div class="day-summary-chip" style="background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,0.2);">
       <span class="dsc-lbl" style="color:var(--red1);">今日支出</span>
       <span class="dsc-val" style="color:var(--red1);">-${fmt(expense)}</span>
     </div>`;
   }
   if(income > 0){
-    html += `<div class="day-summary-chip" style="background:rgba(22,163,74,0.08);border:1px solid rgba(22,163,74,0.2);">
+    html += `<div class="day-summary-chip" style="background:rgba(22,163,74,0.05);border:1px solid rgba(22,163,74,0.2);">
       <span class="dsc-lbl" style="color:var(--acc);">今日收入</span>
       <span class="dsc-val" style="color:var(--acc);">+${fmt(income)}</span>
     </div>`;
