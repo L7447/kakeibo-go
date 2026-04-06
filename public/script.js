@@ -861,8 +861,8 @@ function renderDaySummary(ds){
   let html = '';
   if(expense > 0){
     html += `<div class="day-summary-chip" style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);">
-      <span class="dsc-lbl" style="color:var(--red);">今日支出</span>
-      <span class="dsc-val" style="color:var(--red);">-${fmt(expense)}</span>
+      <span class="dsc-lbl" style="color:var(--red1);">今日支出</span>
+      <span class="dsc-val" style="color:var(--red1);">-${fmt(expense)}</span>
     </div>`;
   }
   if(income > 0){
