@@ -7,7 +7,7 @@
   --blue:#2563EB;--blue-d:rgba(37,99,235,0.15);
   --orange:#F59E0B;
   --t1:#0F172A;--t2:#475569;--t3:#64748B;
-  --mono:'DM Mono',monospace;--sans:'Noto Sans TC',sans-serif;
+  --mono:'Roboto Mono',monospace;--sans:'Noto Sans TC',sans-serif;
   --r:16px;--rs:10px;--nav:64px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
