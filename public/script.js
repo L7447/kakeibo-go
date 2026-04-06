@@ -1,3 +1,11 @@
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => console.log('Service Worker 註冊成功:', reg.scope))
+      .catch((err) => console.log('Service Worker 註冊失敗:', err));
+  });
+}
+
 /* ══ 全域狀態 ══════════════════════════════════ */
 /* ── 自訂確認框（取代 window.confirm）── */
 function customConfirm(name){
