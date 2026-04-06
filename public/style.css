@@ -544,11 +544,11 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
   gap: 5px;
   padding: 5px 10px;
   border-radius: 20px;
-  font-size: 11px;
+  font-size: 12px;
   transition: opacity .2s;
 }
-.day-summary-chip .dsc-lbl { font-weight: 500; }
-.day-summary-chip .dsc-val { font-family: var(--mono); font-size: 13px; font-weight: 700; }
+.day-summary-chip .dsc-lbl { font-weight: 300; }
+.day-summary-chip .dsc-val { font-family: var(--mono); font-size: 14px; font-weight: 500; }
 
 /* ── 簡易新增 overlay（商家、專案、帳戶分組）──────────────────── */
 #add-simple-overlay {
