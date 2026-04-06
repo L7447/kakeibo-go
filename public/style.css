@@ -522,17 +522,15 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .acc-assets, .acc-liab { cursor: pointer; }
 /* 選中：外框加粗 3px，數字 +4px */
 .acc-assets.active .acc-break-tag {
-  border-width: 3px;
-  box-shadow: 0 4px 18px rgba(37,99,235,0.28);
+  border-width: 2px;
   transform: scale(1.04);
 }
-.acc-assets.active .acc-break-tag .amt { font-size: 21px; } /* 17px + 4px */
+.acc-assets.active .acc-break-tag .amt { font-size: 19px; } /* 17px + 4px */
 .acc-liab.active .acc-break-tag {
-  border-width: 3px;
-  box-shadow: 0 4px 18px rgba(220,38,38,0.28);
+  border-width: 2px;
   transform: scale(1.04);
 }
-.acc-liab.active .acc-break-tag .amt { font-size: 21px; } /* 17px + 4px */
+.acc-liab.active .acc-break-tag .amt { font-size: 19px; } /* 17px + 4px */
 /* transition 讓動畫更順暢 */
 .acc-break-tag { transition: border-width .18s, box-shadow .18s, transform .18s, font-size .18s; }
 .acc-break-tag .amt { transition: font-size .18s; }
