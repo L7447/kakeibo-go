@@ -547,8 +547,8 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
   font-size: 12px;
   transition: opacity .2s;
 }
-.day-summary-chip .dsc-lbl { font-weight: 300; }
-.day-summary-chip .dsc-val { font-family: var(--mono); font-size: 15px; font-weight: 500; }
+.day-summary-chip .dsc-lbl { font-weight: 400; }
+.day-summary-chip .dsc-val { font-family: var(--mono); font-size: 16px; font-weight: 600; }
 
 /* ── 簡易新增 overlay（商家、專案、帳戶分組）──────────────────── */
 #add-simple-overlay {
